@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle } from 'lucide-react';
 
 const Assessment: React.FC = () => {
   const { assessments, submitAssessment } = useApp();
@@ -15,7 +15,7 @@ const Assessment: React.FC = () => {
 
   const assessment = assessments.find(a => a.id === activeAssessmentId);
 
-  if (!assessment) return <div className="p-8 md:ml-64 mt-16 md:mt-0">No assessment found.</div>;
+  if (!assessment) return <div className="p-8">No assessment found.</div>;
 
   const handleOptionSelect = (questionId: string, optionIndex: number) => {
     if (submitted) return;
@@ -36,7 +36,7 @@ const Assessment: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-3xl mx-auto md:ml-64 mt-16 md:mt-0">
+    <div className="p-4 md:p-8 max-w-3xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl md:text-2xl font-bold text-gray-800">{assessment.title}</h1>
         <p className="text-gray-500 text-sm md:text-base">Test your retention to unlock next week.</p>

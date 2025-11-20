@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { CheckCircle, Lock, Unlock, BookOpen, ChevronRight, PlayCircle, FileText } from 'lucide-react';
+import { CheckCircle, Lock, BookOpen, ChevronRight, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Roadmap: React.FC = () => {
@@ -18,7 +18,7 @@ const Roadmap: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto md:ml-64 mt-16 md:mt-0">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto">
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Study Roadmap</h1>
         <p className="text-gray-500 mt-2 text-sm md:text-base">Track your journey from beginner to master.</p>
@@ -28,7 +28,7 @@ const Roadmap: React.FC = () => {
         {/* Connecting Line (Visual only, simplified for CSS) */}
         <div className="absolute left-8 top-10 bottom-10 w-1 bg-gray-200 hidden md:block -z-10"></div>
 
-        {weeks.map((week, index) => {
+        {weeks.map((week) => {
           const assessment = getAssessmentForWeek(week.id);
           const assessmentScore = assessment ? user.assessmentScores[assessment.id] : undefined;
           const isPassed = assessmentScore && assessment && assessmentScore >= assessment.passingScore;

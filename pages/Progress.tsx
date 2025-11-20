@@ -5,7 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { BrainCircuit } from 'lucide-react';
 
 const Progress: React.FC = () => {
-  const { user, assessments } = useApp();
+  const { user } = useApp();
   const [aiAnalysis, setAiAnalysis] = useState("Analyzing data...");
 
   // Mock Data for charts
@@ -20,9 +20,8 @@ const Progress: React.FC = () => {
   ];
 
   useEffect(() => {
-    // Simulate checking assessment history for AI
     const history = Object.entries(user?.assessmentScores || {}).map(([id, score]) => ({
-      date: new Date().toISOString(), // Mock date
+      date: new Date().toISOString(),
       score: score as number
     }));
     
@@ -36,7 +35,7 @@ const Progress: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto md:ml-64 mt-16 md:mt-0">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto">
       <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-8">Performance Analytics</h1>
 
       {/* AI Insight Banner */}

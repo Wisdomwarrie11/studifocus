@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Play, Pause, RotateCcw, CheckSquare } from 'lucide-react';
 
 const FocusTimer: React.FC = () => {
@@ -20,7 +20,6 @@ const FocusTimer: React.FC = () => {
       }, 1000);
     } else if (timeLeft === 0) {
       setIsActive(false);
-      // Switch modes automatically for demo purposes
       if (isWorkMode) {
         setTimeLeft(5 * 60); // 5 min break
         setIsWorkMode(false);
@@ -28,7 +27,6 @@ const FocusTimer: React.FC = () => {
         setTimeLeft(25 * 60); // Back to work
         setIsWorkMode(true);
       }
-      // In a real app, play a sound here
     }
     return () => clearInterval(interval);
   }, [isActive, timeLeft, isWorkMode]);
@@ -42,7 +40,7 @@ const FocusTimer: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto md:ml-64 mt-16 md:mt-0">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Deep Work Session</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">

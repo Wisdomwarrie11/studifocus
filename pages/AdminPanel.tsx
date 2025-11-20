@@ -28,7 +28,7 @@ const AdminPanel: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto md:ml-64 mt-16 md:mt-0">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Curriculum Management</h1>
         <button className="w-full sm:w-auto bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center">
