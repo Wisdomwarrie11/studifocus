@@ -1,6 +1,6 @@
 import React from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AppProvider } from './context/AppContext';
+import { HashRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { AppProvider, useApp } from './context/AppContext';
 import Sidebar from './components/Sidebar';
 import StudentDashboard from './pages/StudentDashboard';
 import Roadmap from './pages/Roadmap';
@@ -8,31 +8,68 @@ import Progress from './pages/Progress';
 import FocusTimer from './pages/FocusTimer';
 import Assessment from './pages/Assessment';
 import AdminPanel from './pages/AdminPanel';
+import Login from './pages/Login';
+
+// Protected Layout Component
+const ProtectedLayout: React.FC = () => {
+  const { user } = useApp();
+  
+  // If user is not logged in, redirect to login page
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Sidebar />
+      {/* 
+        Layout Wrapper:
+        lg:ml-64 -> Adds left margin ONLY on large screens (desktop, >1024px).
+        pt-16    -> Adds top padding on mobile/tablet for the fixed header.
+        lg:pt-0  -> Removes top padding on desktop.
+      */}
+      <main className="lg:ml-64 pt-16 lg:pt-0 min-h-screen transition-all duration-200">
+        <Outlet />
+      </main>
+    </div>
+  );
+};
+
+const AppRoutes: React.FC = () => {
+  const { user } = useApp();
+
+  return (
+    <Routes>
+      {/* Public Route */}
+      <Route path="/login" element={<Login />} />
+
+      {/* Protected Routes */}
+      <Route element={<ProtectedLayout />}>
+        <Route path="/dashboard" element={<StudentDashboard />} />
+        <Route path="/roadmap" element={<Roadmap />} />
+        <Route path="/progress" element={<Progress />} />
+        <Route path="/study" element={<FocusTimer />} />
+        <Route path="/assessment" element={<Assessment />} />
+        <Route path="/admin" element={<AdminPanel />} />
+      </Route>
+
+      {/* Root Redirect Logic */}
+      <Route 
+        path="/" 
+        element={<Navigate to={user ? "/dashboard" : "/login"} replace />} 
+      />
+      
+      {/* Catch all redirect */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+};
 
 const App: React.FC = () => {
   return (
     <AppProvider>
       <Router>
-        <div className="min-h-screen bg-gray-50">
-          <Sidebar />
-          {/* 
-            Layout Wrapper:
-            md:ml-64 -> Adds left margin on desktop to make room for the sidebar.
-            pt-16    -> Adds top padding on mobile for the fixed header.
-            md:pt-0  -> Removes top padding on desktop.
-          */}
-          <main className="md:ml-64 pt-16 md:pt-0 min-h-screen transition-all duration-200">
-            <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<StudentDashboard />} />
-              <Route path="/roadmap" element={<Roadmap />} />
-              <Route path="/progress" element={<Progress />} />
-              <Route path="/study" element={<FocusTimer />} />
-              <Route path="/assessment" element={<Assessment />} />
-              <Route path="/admin" element={<AdminPanel />} />
-            </Routes>
-          </main>
-        </div>
+        <AppRoutes />
       </Router>
     </AppProvider>
   );
