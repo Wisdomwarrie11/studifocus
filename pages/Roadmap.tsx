@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { CheckCircle, Lock, Unlock, BookOpen, ChevronRight, PlayCircle, FileText } from 'lucide-react';
@@ -19,10 +18,10 @@ const Roadmap: React.FC = () => {
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto md:ml-64 mt-16 md:mt-0">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Study Roadmap</h1>
-        <p className="text-gray-500 mt-2">Track your journey from beginner to master.</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Study Roadmap</h1>
+        <p className="text-gray-500 mt-2 text-sm md:text-base">Track your journey from beginner to master.</p>
       </div>
 
       <div className="space-y-8 relative">
@@ -45,7 +44,7 @@ const Roadmap: React.FC = () => {
               {/* Week Marker */}
               <div className="hidden md:flex absolute left-0 top-0 w-16 h-16 bg-white border-4 border-indigo-100 rounded-full items-center justify-center z-10 shadow-sm">
                 {week.isUnlocked ? (
-                  <span className="text-xl font-bold text-primary">{week.weekNumber}</span>
+                  <span className="text-xl font-bold text-indigo-600">{week.weekNumber}</span>
                 ) : (
                   <Lock size={20} className="text-gray-400" />
                 )}
@@ -53,10 +52,10 @@ const Roadmap: React.FC = () => {
 
               <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
                 {/* Week Header */}
-                <div className="p-6 border-b border-gray-50 bg-gray-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="p-4 md:p-6 border-b border-gray-50 bg-gray-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h2 className="text-xl font-bold text-gray-800">{week.title}</h2>
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <h2 className="text-lg md:text-xl font-bold text-gray-800">{week.title}</h2>
                       {!week.isUnlocked && <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded">Locked</span>}
                       {isPassed && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium">Completed</span>}
                     </div>
@@ -67,7 +66,7 @@ const Roadmap: React.FC = () => {
                     <div className="w-full sm:w-48">
                       <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-primary transition-all duration-500" 
+                          className="h-full bg-indigo-600 transition-all duration-500" 
                           style={{ width: `${progressPercent}%` }}
                         ></div>
                       </div>
@@ -86,11 +85,11 @@ const Roadmap: React.FC = () => {
                           {isDone ? <CheckCircle size={18} /> : <div className="w-2 h-2 bg-gray-400 rounded-full"></div>}
                         </div>
                         
-                        <div className="flex-1">
-                          <h4 className={`font-medium ${isDone ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
+                        <div className="flex-1 min-w-0">
+                          <h4 className={`font-medium text-sm md:text-base truncate ${isDone ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
                             Day {topic.day}: {topic.title}
                           </h4>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                          <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-gray-400">
                             <span>{topic.estimatedMinutes} min</span>
                             {topic.resources.length > 0 && (
                               <span className="flex items-center gap-1">
@@ -103,7 +102,7 @@ const Roadmap: React.FC = () => {
                         {week.isUnlocked && (
                           <button 
                             onClick={() => navigate('/study')}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-gray-200 p-2 rounded-lg hover:bg-primary hover:text-white hover:border-primary"
+                            className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-white border border-gray-200 p-2 rounded-lg hover:bg-indigo-600 hover:text-white hover:border-indigo-600"
                           >
                             <ChevronRight size={16} />
                           </button>
@@ -115,8 +114,8 @@ const Roadmap: React.FC = () => {
 
                 {/* Assessment Action */}
                 {assessment && (
-                  <div className="p-4 bg-indigo-50/30 border-t border-indigo-50 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
+                  <div className="p-4 bg-indigo-50/30 border-t border-indigo-50 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
                       <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600">
                         <FileText size={20} />
                       </div>
@@ -129,17 +128,17 @@ const Roadmap: React.FC = () => {
                     {week.isUnlocked ? (
                       <button 
                         onClick={() => navigate('/assessment')}
-                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                        className={`w-full sm:w-auto px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
                           isPassed 
                             ? 'bg-green-100 text-green-700 cursor-default' 
-                            : 'bg-primary text-white hover:bg-indigo-700 shadow-sm'
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'
                         }`}
                         disabled={isPassed}
                       >
                         {isPassed ? `Score: ${assessmentScore}%` : 'Start Quiz'}
                       </button>
                     ) : (
-                      <div className="px-3 py-1 bg-gray-100 text-gray-400 text-xs rounded font-medium flex items-center gap-1">
+                      <div className="w-full sm:w-auto px-3 py-1 bg-gray-100 text-gray-400 text-xs rounded font-medium flex items-center justify-center sm:justify-start gap-1">
                         <Lock size={12} /> Locked
                       </div>
                     )}

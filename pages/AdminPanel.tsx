@@ -28,18 +28,18 @@ const AdminPanel: React.FC = () => {
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Curriculum Management</h1>
-        <button className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto md:ml-64 mt-16 md:mt-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Curriculum Management</h1>
+        <button className="w-full sm:w-auto bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center">
           <Upload size={16} className="mr-2" />
           Import CSV
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-8">
-        <h2 className="text-xl font-bold text-gray-700 mb-6 flex items-center">
-          <Plus className="mr-2 text-primary" />
+      <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 md:p-8">
+        <h2 className="text-lg md:text-xl font-bold text-gray-700 mb-6 flex items-center">
+          <Plus className="mr-2 text-indigo-600" />
           Add New Study Topic
         </h2>
 
@@ -48,7 +48,7 @@ const AdminPanel: React.FC = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Target Week</label>
               <select 
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
                 value={selectedWeek}
                 onChange={(e) => setSelectedWeek(e.target.value)}
               >
@@ -61,7 +61,7 @@ const AdminPanel: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Duration (min)</label>
               <input 
                 type="number" 
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
                 value={duration}
                 onChange={(e) => setDuration(Number(e.target.value))}
               />
@@ -72,7 +72,7 @@ const AdminPanel: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">Topic Title</label>
             <input 
               type="text" 
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
               placeholder="e.g., Advanced Calculus Limits"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -83,7 +83,7 @@ const AdminPanel: React.FC = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Description / Instructions</label>
             <textarea 
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none h-32 resize-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none h-32 resize-none"
               placeholder="Briefly describe what the student needs to learn..."
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
@@ -92,7 +92,7 @@ const AdminPanel: React.FC = () => {
           </div>
 
           <div className="flex justify-end pt-4 border-t border-gray-100">
-            <button type="submit" className="bg-primary text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">
+            <button type="submit" className="w-full sm:w-auto bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">
               Publish Topic
             </button>
           </div>
@@ -104,8 +104,8 @@ const AdminPanel: React.FC = () => {
         <div className="space-y-2">
            {weeks[0].topics.map(t => (
              <div key={t.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-               <span className="font-medium text-gray-800">{t.title}</span>
-               <span className="text-xs text-gray-500">{t.estimatedMinutes} min</span>
+               <span className="font-medium text-gray-800 text-sm md:text-base truncate mr-2">{t.title}</span>
+               <span className="text-xs text-gray-500 whitespace-nowrap">{t.estimatedMinutes} min</span>
              </div>
            ))}
         </div>

@@ -42,26 +42,26 @@ const FocusTimer: React.FC = () => {
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto md:ml-64 mt-16 md:mt-0">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Deep Work Session</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
         {/* Timer Card */}
-        <div className="bg-white rounded-3xl shadow-xl p-10 flex flex-col items-center justify-center relative overflow-hidden">
+        <div className="bg-white rounded-3xl shadow-xl p-8 md:p-10 flex flex-col items-center justify-center relative overflow-hidden min-h-[300px]">
           <div className={`absolute top-0 left-0 w-full h-2 ${isWorkMode ? 'bg-red-500' : 'bg-green-500'}`}></div>
           
           <span className={`text-sm font-bold uppercase tracking-widest mb-4 ${isWorkMode ? 'text-red-500' : 'text-green-500'}`}>
             {isWorkMode ? 'Focus Time' : 'Break Time'}
           </span>
           
-          <div className="text-8xl font-mono font-bold text-gray-800 mb-8 tracking-tighter">
+          <div className="text-6xl md:text-8xl font-mono font-bold text-gray-800 mb-8 tracking-tighter">
             {formatTime(timeLeft)}
           </div>
 
           <div className="flex space-x-6">
             <button 
               onClick={toggleTimer}
-              className="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center hover:bg-indigo-700 shadow-lg transition-transform active:scale-95"
+              className="w-16 h-16 rounded-full bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-700 shadow-lg transition-transform active:scale-95"
             >
               {isActive ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" className="ml-1" />}
             </button>
@@ -77,14 +77,14 @@ const FocusTimer: React.FC = () => {
         {/* Focus Checklist */}
         <div className="bg-white rounded-2xl shadow-md p-6">
           <h3 className="font-bold text-gray-800 mb-4 flex items-center">
-            <CheckSquare className="mr-2 text-primary" size={20} />
+            <CheckSquare className="mr-2 text-indigo-600" size={20} />
             Pre-Flight Checklist
           </h3>
           <div className="space-y-4">
             {['Phone on Silent / Do Not Disturb', 'Water bottle on desk', 'Clear specific goal defined', 'Comfortable environment'].map((item, idx) => (
               <label key={idx} className="flex items-center space-x-3 cursor-pointer group">
-                <input type="checkbox" className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary" />
-                <span className="text-gray-600 group-hover:text-gray-900">{item}</span>
+                <input type="checkbox" className="w-5 h-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-600" />
+                <span className="text-gray-600 group-hover:text-gray-900 text-sm md:text-base">{item}</span>
               </label>
             ))}
           </div>
