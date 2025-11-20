@@ -67,3 +67,24 @@ export interface DailyGoal {
   text: string;
   completed: boolean;
 }
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface DailyNote {
+  id: string;
+  userId: string;
+  note: string;
+  date: string;
+}
+
+export interface FlashCard {
+  id: string;
+  userId: string;
+  content: string;
+  reminderInterval: 'hourly' | 'daily';
+}

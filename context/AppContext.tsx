@@ -1,6 +1,6 @@
 // context/AppContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, UserRole, CourseWeek, Assessment, DailyGoal } from '../types';
+import { User, UserRole, CourseWeek, Assessment, DailyGoal, Badge } from '../types';
 import { 
   getAuth, 
   onAuthStateChanged, 
@@ -13,6 +13,12 @@ import {
 } from 'firebase/auth';
 import { auth } from '../src/firebase';
 
+interface FlashCard {
+  id: string;
+  text: string;
+  interval: 'hourly' | 'daily';
+}
+
 interface AppContextType {
   user: User | null;
   setUser: (user: User | null) => void;
@@ -22,11 +28,18 @@ interface AppContextType {
   weeks: CourseWeek[];
   assessments: Assessment[];
   dailyGoals: DailyGoal[];
+  flashCards: FlashCard[];
+  announcements: string[];
+  // New functions
   addGoal: (text: string) => void;
   toggleGoal: (id: string) => void;
   completeTopic: (topicId: string) => void;
   submitAssessment: (assessmentId: string, score: number) => void;
-  addTopic: (weekId: string, topic: any) => void;
+  completeFocusCheck: () => void;
+  submitDailyNote: (note: string) => void;
+  addFlashCard: (text: string, interval: 'hourly' | 'daily') => void;
+  lockIn: () => void;
+  addAnnouncement: (text: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -36,6 +49,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [weeks, setWeeks] = useState<CourseWeek[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [dailyGoals, setDailyGoals] = useState<DailyGoal[]>([]);
+  const [flashCards, setFlashCards] = useState<FlashCard[]>([]);
+  const [announcements, setAnnouncements] = useState<string[]>([]);
 
   const saveUser = (firebaseUser: FirebaseUser, role: UserRole = UserRole.STUDENT) => {
     const mappedUser: User = {
@@ -58,10 +73,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (firebaseUser) {
         const saved = localStorage.getItem('currentUser');
         if (saved) {
-          // Restore full user from localStorage
           setUser(JSON.parse(saved));
         } else {
-          // Fallback to creating user from Firebase info
           saveUser(firebaseUser, UserRole.STUDENT);
         }
       } else {
@@ -77,15 +90,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const token = await getIdTokenResult(cred.user);
     const isAdmin = token.claims.admin === true;
 
-    // Role validation
-    if (selectedRole === UserRole.ADMIN && !isAdmin) {
-      throw new Error("Access denied. This account is not an admin.");
-    }
-    if (selectedRole === UserRole.STUDENT && isAdmin) {
-      throw new Error("Admins cannot log in as students.");
-    }
+    if (selectedRole === UserRole.ADMIN && !isAdmin) throw new Error("Access denied.");
+    if (selectedRole === UserRole.STUDENT && isAdmin) throw new Error("Admins cannot log in as students.");
 
-    // Preserve displayName
     saveUser(cred.user, isAdmin ? UserRole.ADMIN : UserRole.STUDENT);
   };
 
@@ -103,15 +110,74 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.removeItem('currentUser');
   };
 
-  // --- App Data Logic (Weeks, Goals, Topics, Assessments) ---
+  // --- Study Room & Points Logic ---
   const addGoal = (text: string) => setDailyGoals([...dailyGoals, { id: Date.now().toString(), text, completed: false }]);
-  const toggleGoal = (id: string) => setDailyGoals(goals => goals.map(g => g.id === id ? { ...g, completed: !g.completed } : g));
-  const completeTopic = (topicId: string) => { if (!user) return; if (!user.completedTopics.includes(topicId)) setUser({ ...user, completedTopics: [...user.completedTopics, topicId] }); };
-  const submitAssessment = (assessmentId: string, score: number) => { if (!user) return; setUser({ ...user, assessmentScores: { ...user.assessmentScores, [assessmentId]: score } }); };
+  
+  const toggleGoal = (id: string) => {
+    if (!user) return;
+    setDailyGoals(goals => goals.map(g => {
+      if (g.id === id) {
+        const completed = !g.completed;
+        if (completed) {
+          // Award 10 points per completed goal
+          setUser({ ...user, points: user.points + 10 });
+          alert(`🎯 Goal completed! You earned 10 points.`);
+        }
+        return { ...g, completed };
+      }
+      return g;
+    }));
+  };
+
+  const completeFocusCheck = () => {
+    if (!user) return;
+    setUser({ ...user, points: user.points + 2 });
+    alert(`✅ Focus check completed! You earned 2 points.`);
+  };
+
+  const submitDailyNote = (note: string) => {
+    if (!user) return;
+    setUser({ ...user, points: user.points + 10 });
+    alert(`📝 Daily note submitted! You earned 10 points.`);
+  };
+
+  const addFlashCard = (text: string, interval: 'hourly' | 'daily') => {
+    setFlashCards([...flashCards, { id: Date.now().toString(), text, interval }]);
+  };
+
+  const completeTopic = (topicId: string) => {
+    if (!user) return;
+    if (!user.completedTopics.includes(topicId)) setUser({ ...user, completedTopics: [...user.completedTopics, topicId] });
+  };
+
+  const submitAssessment = (assessmentId: string, score: number) => {
+    if (!user) return;
+    setUser({ ...user, assessmentScores: { ...user.assessmentScores, [assessmentId]: score } });
+  };
+
+  const lockIn = () => {
+    if (!user) return;
+    // Only once per day
+    const today = new Date().toDateString();
+    const lastLock = localStorage.getItem(`lockIn-${user.id}`);
+    if (lastLock === today) return;
+    setUser({ ...user, points: user.points + 10 });
+    localStorage.setItem(`lockIn-${user.id}`, today);
+    alert(`🔒 Locked in! You earned 10 points.`);
+  };
+
+  const addAnnouncement = (text: string) => {
+    setAnnouncements([...announcements, text]);
+  };
+
   const addTopic = (weekId: string, topicData: any) => setWeeks(prev => prev.map(w => w.id === weekId ? { ...w, topics: [...w.topics, { ...topicData, id: Date.now().toString() }] } : w));
 
   return (
-    <AppContext.Provider value={{ user, setUser, login, register, logout, weeks, assessments, dailyGoals, addGoal, toggleGoal, completeTopic, submitAssessment, addTopic }}>
+    <AppContext.Provider value={{
+      user, setUser, login, register, logout, weeks, assessments, dailyGoals,
+      flashCards, announcements, addGoal, toggleGoal, completeTopic, submitAssessment,
+      completeFocusCheck, submitDailyNote, addFlashCard, lockIn, addAnnouncement, addTopic
+    }}>
       {children}
     </AppContext.Provider>
   );
