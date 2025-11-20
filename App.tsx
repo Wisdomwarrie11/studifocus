@@ -29,7 +29,7 @@ const ProtectedLayout: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-navy-900">
       <Sidebar />
       {/* 
         Layout Wrapper:

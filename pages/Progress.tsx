@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { analyzeProgress } from '../services/geminiService';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { BrainCircuit } from 'lucide-react';
+import { BrainCircuit, CheckSquare, Award, Zap, Book } from 'lucide-react';
 
 const Progress: React.FC = () => {
   const { user, dailyGoals, flashCards } = useApp();
@@ -10,12 +10,12 @@ const Progress: React.FC = () => {
 
   if (!user) return null;
 
-  // Weekly study points breakdown
-  const focusPoints = user.points; // total points earned
-  const goalPoints = dailyGoals.reduce((acc, g) => g.completed ? acc + 10 : acc, 0);
-  // Lock-in points already included in user.points, so we can show separately if needed
+  // Points from completed goals
+  const completedGoalPoints = dailyGoals.reduce((acc, g) => g.completed ? acc + 10 : acc, 0);
+  // Focus sessions and lock-in already included in user.points
+  const focusPoints = user.points - completedGoalPoints;
 
-  // Prepare mock weekly data for charts (you can replace with actual tracked hours later)
+  // Prepare mock weekly data for charts (replace with actual tracked hours)
   const weeklyData = [
     { name: 'Mon', hours: 1.5, focus: 70 },
     { name: 'Tue', hours: 2.0, focus: 85 },
@@ -54,8 +54,31 @@ const Progress: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col items-center">
+          <Award size={32} className="text-yellow-500 mb-2" />
+          <span className="text-xl font-bold">{user.points}</span>
+          <p className="text-gray-500 text-sm">Total Points</p>
+        </div>
+        <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col items-center">
+          <Zap size={32} className="text-indigo-500 mb-2" />
+          <span className="text-xl font-bold">{user.streak}</span>
+          <p className="text-gray-500 text-sm">Current Streak</p>
+        </div>
+        <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col items-center">
+          <CheckSquare size={32} className="text-green-500 mb-2" />
+          <span className="text-xl font-bold">{dailyGoals.filter(g => g.completed).length}</span>
+          <p className="text-gray-500 text-sm">Completed Goals</p>
+        </div>
+        <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col items-center">
+          <Book size={32} className="text-yellow-600 mb-2" />
+          <span className="text-xl font-bold">{flashCards.length}</span>
+          <p className="text-gray-500 text-sm">Flashcards Set</p>
+        </div>
+      </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Study Hours Chart */}
         <div className="bg-white p-4 md:p-6 rounded-2xl shadow-md border border-gray-100">
           <h3 className="text-lg font-bold text-gray-700 mb-6">Study Hours (This Week)</h3>
@@ -65,7 +88,7 @@ const Progress: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={12} />
                 <YAxis axisLine={false} tickLine={false} fontSize={12} />
-                <Tooltip cursor={{fill: '#f3f4f6'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}} />
+                <Tooltip cursor={{fill: '#f3f4f6'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'}} />
                 <Bar dataKey="hours" fill="#4F46E5" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -87,21 +110,23 @@ const Progress: React.FC = () => {
             </ResponsiveContainer>
           </div>
         </div>
+      </div>
 
-        {/* Points Summary */}
-        <div className="lg:col-span-2 bg-white p-4 md:p-6 rounded-2xl shadow-md border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-700 mb-6">Weekly Points Summary</h3>
+      {/* Points Summary & Badges */}
+      <div className="lg:mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Points Breakdown */}
+        <div className="bg-white p-4 md:p-6 rounded-2xl shadow-md border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-700 mb-4">Weekly Points Summary</h3>
           <ul className="space-y-2 text-gray-700">
-            <li>🎯 Daily Goals Points: {goalPoints}</li>
-            <li>✅ Focus Session Points: {user.points - goalPoints} (includes Lock-In & Daily Notes)</li>
-            <li>📝 Daily Notes Submitted: {flashCards.length}</li>
-            <li>🔒 Locked In Points: {user.points >= 10 ? 10 : 0}</li>
+            <li>🎯 Daily Goals Points: {completedGoalPoints}</li>
+            <li>✅ Focus & Lock-in Points: {focusPoints}</li>
+            <li>📝 Flashcards Submitted: {flashCards.length}</li>
           </ul>
         </div>
 
-        {/* Badges Section */}
-        <div className="lg:col-span-2 bg-white p-4 md:p-6 rounded-2xl shadow-md border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-700 mb-6">Badges & Achievements</h3>
+        {/* Badges */}
+        <div className="bg-white p-4 md:p-6 rounded-2xl shadow-md border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-700 mb-4">Badges & Achievements</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {user.badges.map(badge => (
               <div key={badge.id} className="bg-yellow-50 border border-yellow-100 p-4 rounded-xl flex flex-col items-center text-center">
@@ -110,11 +135,6 @@ const Progress: React.FC = () => {
                 <p className="text-xs text-gray-500 mt-1 hidden sm:block">{badge.description}</p>
               </div>
             ))}
-            <div className="bg-gray-50 border border-gray-100 p-4 rounded-xl flex flex-col items-center text-center opacity-50 grayscale">
-              <div className="text-3xl md:text-4xl mb-2">👑</div>
-              <h4 className="font-bold text-gray-800 text-sm">Week 4 King</h4>
-              <p className="text-xs text-gray-500 mt-1 hidden sm:block">Complete Month 1</p>
-            </div>
           </div>
         </div>
       </div>
