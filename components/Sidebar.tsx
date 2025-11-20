@@ -34,8 +34,8 @@ const Sidebar: React.FC = () => {
 
   return (
     <>
-      {/* Mobile Header Toggle */}
-      <div className="md:hidden fixed top-0 left-0 w-full bg-white border-b border-gray-100 z-30 px-4 py-3 flex items-center justify-between shadow-sm">
+      {/* Mobile/Tablet Header Toggle - Visible below lg breakpoint */}
+      <div className="lg:hidden fixed top-0 left-0 w-full bg-white border-b border-gray-100 z-30 px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
             SF
@@ -50,10 +50,10 @@ const Sidebar: React.FC = () => {
         </button>
       </div>
 
-      {/* Overlay for Mobile */}
+      {/* Overlay for Mobile/Tablet - Visible when menu open below lg */}
       {isMobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
           onClick={closeMobileMenu}
         />
       )}
@@ -63,9 +63,10 @@ const Sidebar: React.FC = () => {
         w-64 bg-white h-screen fixed left-0 top-0 shadow-xl flex flex-col z-40
         transition-transform duration-300 ease-in-out
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-        md:translate-x-0 md:flex
+        lg:translate-x-0
       `}>
-        <div className="p-6 border-b border-gray-100 hidden md:block">
+        {/* Desktop Header - Visible only on lg+ */}
+        <div className="p-6 border-b border-gray-100 hidden lg:block">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
               SF
@@ -77,8 +78,8 @@ const Sidebar: React.FC = () => {
           </p>
         </div>
 
-        {/* Mobile Header inside sidebar (visible when menu open) */}
-        <div className="p-6 border-b border-gray-100 md:hidden flex items-center justify-between">
+        {/* Mobile/Tablet Header inside sidebar (visible when menu open below lg) */}
+        <div className="p-6 border-b border-gray-100 lg:hidden flex items-center justify-between">
            <span className="font-bold text-gray-500">Menu</span>
            <button onClick={closeMobileMenu} className="text-gray-400 hover:text-gray-600">
              <X size={20} />
