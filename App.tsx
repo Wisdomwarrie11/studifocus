@@ -9,6 +9,7 @@ import FocusTimer from './pages/FocusTimer';
 import Assessment from './pages/Assessment';
 import AdminPanel from './pages/AdminPanel';
 import Login from './pages/Login';
+import Registration from './pages/Registration';
 
 // Protected Layout Component
 const ProtectedLayout: React.FC = () => {
@@ -26,6 +27,8 @@ const ProtectedLayout: React.FC = () => {
   // If not loading and no user, redirect to login
   if (!user) {
     return <Navigate to="/login" replace />;
+
+
   }
 
   return (
@@ -51,6 +54,8 @@ const AppRoutes: React.FC = () => {
     <Routes>
       {/* Public Route */}
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Registration />} />
+
 
       {/* Protected Routes */}
       <Route element={<ProtectedLayout />}>

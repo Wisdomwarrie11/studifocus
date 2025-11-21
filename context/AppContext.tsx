@@ -7,8 +7,7 @@ import {
   getIdTokenResult,
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  updateProfile, 
-  User as FirebaseUser 
+  updateProfile
 } from 'firebase/auth';
 import { auth } from '../src/firebase';
 
@@ -16,6 +15,11 @@ interface FlashCard {
   id: string;
   text: string;
   interval: 'hourly' | 'daily';
+}
+
+interface Announcement {
+  id: string;
+  text: string;
 }
 
 interface AppContextType {
@@ -28,11 +32,13 @@ interface AppContextType {
   assessments: Assessment[];
   dailyGoals: DailyGoal[];
   flashCards: FlashCard[];
+  announcements: Announcement[];
   addGoal: (text: string) => void;
   toggleGoal: (id: string) => void;
   completeFocusCheck: () => void;
   submitDailyNote: (note: string) => void;
   addFlashCard: (text: string, interval: 'hourly' | 'daily') => void;
+  addAnnouncement: (text: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -55,24 +61,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const [weeks, setWeeks] = useState<CourseWeek[]>([]);
 
-  // --- Persist to localStorage whenever state changes ---
+  // --- Announcements ---
+  const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
+    const saved = localStorage.getItem('announcements');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const addAnnouncement = (text: string) => {
+    const newAnnouncement = { id: Date.now().toString(), text };
+    setAnnouncements(prev => [newAnnouncement, ...prev]);
+  };
+
+  // --- Persist state ---
   useEffect(() => {
     if (user) localStorage.setItem('currentUser', JSON.stringify(user));
   }, [user]);
 
-  useEffect(() => {
-    localStorage.setItem('dailyGoals', JSON.stringify(dailyGoals));
-  }, [dailyGoals]);
-
-  useEffect(() => {
-    localStorage.setItem('flashCards', JSON.stringify(flashCards));
-  }, [flashCards]);
+  useEffect(() => localStorage.setItem('dailyGoals', JSON.stringify(dailyGoals)), [dailyGoals]);
+  useEffect(() => localStorage.setItem('flashCards', JSON.stringify(flashCards)), [flashCards]);
+  useEffect(() => localStorage.setItem('announcements', JSON.stringify(announcements)), [announcements]);
 
   // --- Firebase auth listener ---
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser && !user) {
-        // If no user in state, load from localStorage or create new
         const saved = localStorage.getItem('currentUser');
         if (saved) setUser(JSON.parse(saved));
         else {
@@ -98,7 +110,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return () => unsubscribe();
   }, []);
 
-  // --- Context functions ---
+  // --- Auth & context functions ---
   const login = async (email: string, password: string, selectedRole: UserRole = UserRole.STUDENT) => {
     const cred = await signInWithEmailAndPassword(auth, email, password);
     const token = await getIdTokenResult(cred.user);
@@ -139,7 +151,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const addGoal = (text: string) => setDailyGoals([...dailyGoals, { id: Date.now().toString(), text, completed: false }]);
-  
+
   const toggleGoal = (id: string) => {
     if (!user) return;
     setDailyGoals(goals =>
@@ -170,13 +182,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   return (
     <AppContext.Provider value={{
-
-      
-      user, setUser, login, register, logout, weeks,
-      dailyGoals, flashCards,
-      addGoal, toggleGoal, completeFocusCheck, submitDailyNote, addFlashCard
+      user,
+      setUser,
+      login,
+      register,
+      logout,
+      weeks,
+      dailyGoals,
+      flashCards,
+      announcements,
+      addGoal,
+      toggleGoal,
+      completeFocusCheck,
+      submitDailyNote,
+      addFlashCard,
+      addAnnouncement
     }}>
-      
       {children}
     </AppContext.Provider>
   );

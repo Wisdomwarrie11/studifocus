@@ -14,7 +14,7 @@ import { useApp } from '../context/AppContext';
 import { UserRole } from '../types';
 
 const Sidebar: React.FC = () => {
-  const { user, logout } = useApp();
+  const { user, logout, announcements } = useApp(); // <-- pull announcements here
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -78,12 +78,12 @@ const Sidebar: React.FC = () => {
           </p>
         </div>
 
-        {/* Mobile/Tablet Header inside sidebar (visible when menu open below lg) */}
+        {/* Mobile/Tablet Header inside sidebar */}
         <div className="p-6 border-b border-gray-100 lg:hidden flex items-center justify-between">
-           <span className="font-bold text-gray-500">Menu</span>
-           <button onClick={closeMobileMenu} className="text-gray-400 hover:text-gray-600">
-             <X size={20} />
-           </button>
+          <span className="font-bold text-gray-500">Menu</span>
+          <button onClick={closeMobileMenu} className="text-gray-400 hover:text-gray-600">
+            <X size={20} />
+          </button>
         </div>
 
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
@@ -91,8 +91,17 @@ const Sidebar: React.FC = () => {
             <>
               <NavLink to="/dashboard" className={navClass} onClick={closeMobileMenu}>
                 <LayoutDashboard size={20} />
-                <span>Dashboard</span>
+                <span className="flex items-center">
+                  Dashboard
+                  {announcements.length > 0 && (
+                    <span 
+                      className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" 
+                      title="New announcement" 
+                    />
+                  )}
+                </span>
               </NavLink>
+
               <NavLink to="/study" className={navClass} onClick={closeMobileMenu}>
                 <Target size={20} />
                 <span>Study Room</span>

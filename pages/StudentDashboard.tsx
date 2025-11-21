@@ -5,7 +5,7 @@ import { CheckCircle, Circle, Flame, Trophy, ArrowRight, Plus } from 'lucide-rea
 import { Link, useNavigate } from 'react-router-dom';
 
 const StudentDashboard: React.FC = () => {
-  const { user, dailyGoals, toggleGoal, addGoal, weeks } = useApp();
+  const { user, dailyGoals, toggleGoal, addGoal, weeks, announcements } = useApp();
   const [coachMessage, setCoachMessage] = useState<string>("Analyzing your performance...");
   const [newGoalText, setNewGoalText] = useState("");
   const navigate = useNavigate();
@@ -35,8 +35,26 @@ const StudentDashboard: React.FC = () => {
   if (!user) return null;
 
   return (
-    // Removed lg:ml-64 and mt-16. Now uses p-4 on mobile, p-8 on desktop.
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
+      {/* Announcement Section */}
+      {announcements.length > 0 && (
+        <div className="mb-8 space-y-2">
+          {announcements.map((announcement, idx) => (
+            <div key={idx} className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-xl flex items-start space-x-3">
+              <div className="mt-1">
+                <svg className="w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10c0 4.418-3.582 8-8 8s-8-3.582-8-8 3.582-8 8-8 8 3.582 8 8zm-8-4a1 1 0 00-.993.883L9 7v4a1 1 0 001.993.117L11 11V7a1 1 0 00-1-1zm0 8a1.25 1.25 0 100 2.5 1.25 1.25 0 000-2.5z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-yellow-800 font-semibold text-sm md:text-base">Announcement</p>
+                <p className="text-yellow-700 text-sm md:text-base">{announcement.text}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Header & AI Coach */}
       <div className="mb-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 gap-4 md:gap-0">
@@ -100,7 +118,7 @@ const StudentDashboard: React.FC = () => {
               </div>
             </div>
           </div>
-    
+      
           {/* Today's Topic Card */}
           <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 md:p-8">
              <h3 className="text-lg font-bold text-gray-700 mb-4">Today's Focus</h3>
