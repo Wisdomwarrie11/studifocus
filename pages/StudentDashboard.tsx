@@ -73,7 +73,7 @@ const StudentDashboard: React.FC = () => {
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
           <div className="relative z-10">
             <h3 className="text-indigo-200 font-semibold text-xs md:text-sm uppercase tracking-wider mb-1">
-              AI Accountability Coach
+              Your Study Companion 
             </h3>
             <p className="text-lg md:text-2xl font-medium leading-relaxed">"{coachMessage}"</p>
           </div>

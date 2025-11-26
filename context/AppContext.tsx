@@ -1,6 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, UserRole, CourseWeek, Assessment, DailyGoal, LibraryItem, ReadingLog, Community } from '../types';
-import { auth } from '../src/firebase'; 
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut,
+  getIdTokenResult,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile
+  } from 'firebase/auth';
+  import { auth } from '../src/firebase';
 
 interface FlashCard {
   id: string;
@@ -107,46 +116,73 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => localStorage.setItem('readingLogs', JSON.stringify(readingLogs)), [readingLogs]);
   useEffect(() => localStorage.setItem('communities', JSON.stringify(communities)), [communities]);
 
-  // --- Mock Auth ---
-  useEffect(() => {
-    if (!user) {
-       // Mock initialization if needed
-    }
+// --- Firebase auth listener ---
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+  if (firebaseUser && !user) {
+  const saved = localStorage.getItem('currentUser');
+  if (saved) setUser(JSON.parse(saved));
+  else {
+  const newUser: User = {
+  id: firebaseUser.uid,
+  name: firebaseUser.displayName || 'No Name',
+  email: firebaseUser.email || '',
+  role: UserRole.STUDENT,
+  streak: 0,
+  points: 0,
+  badges: [],
+  completedTopics: [],
+  assessmentScores: {}
+  };
+  setUser(newUser);
+  localStorage.setItem('currentUser', JSON.stringify(newUser));
+  }
+  } else if (!firebaseUser) {
+  setUser(null);
+  localStorage.removeItem('currentUser');
+  }
+  });
+  return () => unsubscribe();
   }, []);
-
+  
+  // --- Auth & context functions ---
   const login = async (email: string, password: string, selectedRole: UserRole = UserRole.STUDENT) => {
-    const isAdmin = selectedRole === UserRole.ADMIN;
-    setUser({
-      id: 'mock-uid',
-      name: 'Demo User',
-      email: email,
-      role: isAdmin ? UserRole.ADMIN : UserRole.STUDENT,
-      streak: 0,
-      points: 0,
-      badges: [],
-      completedTopics: [],
-      assessmentScores: {}
-    });
+  const cred = await signInWithEmailAndPassword(auth, email, password);
+  const token = await getIdTokenResult(cred.user);
+  const isAdmin = token.claims.admin === true;
+  setUser({
+  id: cred.user.uid,
+  name: cred.user.displayName || 'No Name',
+  email: cred.user.email || '',
+  role: isAdmin ? UserRole.ADMIN : UserRole.STUDENT,
+  streak: 0,
+  points: 0,
+  badges: [],
+  completedTopics: [],
+  assessmentScores: {}
+  });
   };
-
   const register = async (name: string, email: string, password: string) => {
-    setUser({
-      id: 'mock-uid-new',
-      name,
-      email,
-      role: UserRole.STUDENT,
-      streak: 0,
-      points: 0,
-      badges: [],
-      completedTopics: [],
-      assessmentScores: {}
-    });
+  const cred = await createUserWithEmailAndPassword(auth, email, password);
+  await updateProfile(cred.user, { displayName: name });
+  setUser({
+  id: cred.user.uid,
+  name,
+  email,
+  role: UserRole.STUDENT,
+  streak: 0,
+  points: 0,
+  badges: [],
+  completedTopics: [],
+  assessmentScores: {}
+  });
+  };
+  const logout = async () => {
+  await signOut(auth);
+  setUser(null);
+  localStorage.removeItem('currentUser');
   };
 
-  const logout = async () => {
-    setUser(null);
-    localStorage.removeItem('currentUser');
-  };
 
   const addGoal = (text: string) => setDailyGoals([...dailyGoals, { id: Date.now().toString(), text, completed: false }]);
 
