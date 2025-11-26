@@ -88,3 +88,32 @@ export interface FlashCard {
   content: string;
   reminderInterval: 'hourly' | 'daily';
 }
+
+// --- New Types for Library Feature ---
+
+export interface LibraryItem {
+  id: string;
+  title: string;
+  category: string; // e.g., "Biology 101", "Personal Development"
+  type: 'link' | 'text' | 'pdf';
+  content: string; // URL or actual text content
+  userNotes: string;
+  createdAt: string;
+}
+
+export interface ReadingLog {
+  id: string;
+  itemId: string;
+  itemTitle: string;
+  durationSeconds: number;
+  date: string;
+}
+export interface Community {
+  id: string;
+  name: string;
+  description: string;
+  members: number;
+  platform: 'Slack' | 'Discord' | 'WhatsApp';
+  joined: boolean;
+  link: string;
+}

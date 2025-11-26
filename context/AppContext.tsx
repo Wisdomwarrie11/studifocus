@@ -1,15 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, UserRole, CourseWeek, Assessment, DailyGoal } from '../types';
-import { 
-  getAuth, 
-  onAuthStateChanged, 
-  signOut, 
-  getIdTokenResult,
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  updateProfile
-} from 'firebase/auth';
-import { auth } from '../src/firebase';
+import { User, UserRole, CourseWeek, Assessment, DailyGoal, LibraryItem, ReadingLog, Community } from '../types';
+import { auth } from '../src/firebase'; 
 
 interface FlashCard {
   id: string;
@@ -33,12 +24,25 @@ interface AppContextType {
   dailyGoals: DailyGoal[];
   flashCards: FlashCard[];
   announcements: Announcement[];
+  libraryItems: LibraryItem[];
+  readingLogs: ReadingLog[];
+  communities: Community[];
   addGoal: (text: string) => void;
   toggleGoal: (id: string) => void;
   completeFocusCheck: () => void;
   submitDailyNote: (note: string) => void;
   addFlashCard: (text: string, interval: 'hourly' | 'daily') => void;
   addAnnouncement: (text: string) => void;
+  
+  // Library Methods
+  addLibraryItem: (item: Omit<LibraryItem, 'id' | 'createdAt' | 'userNotes'>) => void;
+  updateLibraryItemNote: (id: string, note: string) => void;
+  addReadingLog: (itemId: string, itemTitle: string, durationSeconds: number) => void;
+  deleteLibraryItem: (id: string) => void;
+  
+  // Community Methods
+  joinCommunity: (id: string) => void;
+  leaveCommunity: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -60,19 +64,38 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   });
 
   const [weeks, setWeeks] = useState<CourseWeek[]>([]);
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
 
-  // --- Announcements ---
   const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
     const saved = localStorage.getItem('announcements');
     return saved ? JSON.parse(saved) : [];
   });
 
-  const addAnnouncement = (text: string) => {
-    const newAnnouncement = { id: Date.now().toString(), text };
-    setAnnouncements(prev => [newAnnouncement, ...prev]);
-  };
+  // --- Library State ---
+  const [libraryItems, setLibraryItems] = useState<LibraryItem[]>(() => {
+    const saved = localStorage.getItem('libraryItems');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  // --- Persist state ---
+  const [readingLogs, setReadingLogs] = useState<ReadingLog[]>(() => {
+    const saved = localStorage.getItem('readingLogs');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // --- Community State ---
+  const initialCommunities: Community[] = [
+    { id: '1', name: 'Midnight Scholars', description: 'For those who burn the midnight oil. 24/7 accountability.', members: 420, platform: 'Discord', joined: false, link: '#' },
+    { id: '2', name: 'Med School Grind', description: 'Case studies, flashcards, and group reading sessions.', members: 89, platform: 'Slack', joined: false, link: '#' },
+    { id: '3', name: 'Pomodoro Power', description: 'Group timers and productivity hacks.', members: 1250, platform: 'WhatsApp', joined: false, link: '#' },
+    { id: '4', name: 'CS Algorithms', description: 'Daily LeetCode and textbook reading group.', members: 300, platform: 'Discord', joined: false, link: '#' }
+  ];
+
+  const [communities, setCommunities] = useState<Community[]>(() => {
+    const saved = localStorage.getItem('communities');
+    return saved ? JSON.parse(saved) : initialCommunities;
+  });
+
+  // --- Persistence ---
   useEffect(() => {
     if (user) localStorage.setItem('currentUser', JSON.stringify(user));
   }, [user]);
@@ -80,45 +103,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => localStorage.setItem('dailyGoals', JSON.stringify(dailyGoals)), [dailyGoals]);
   useEffect(() => localStorage.setItem('flashCards', JSON.stringify(flashCards)), [flashCards]);
   useEffect(() => localStorage.setItem('announcements', JSON.stringify(announcements)), [announcements]);
+  useEffect(() => localStorage.setItem('libraryItems', JSON.stringify(libraryItems)), [libraryItems]);
+  useEffect(() => localStorage.setItem('readingLogs', JSON.stringify(readingLogs)), [readingLogs]);
+  useEffect(() => localStorage.setItem('communities', JSON.stringify(communities)), [communities]);
 
-  // --- Firebase auth listener ---
+  // --- Mock Auth ---
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser && !user) {
-        const saved = localStorage.getItem('currentUser');
-        if (saved) setUser(JSON.parse(saved));
-        else {
-          const newUser: User = {
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName || 'No Name',
-            email: firebaseUser.email || '',
-            role: UserRole.STUDENT,
-            streak: 0,
-            points: 0,
-            badges: [],
-            completedTopics: [],
-            assessmentScores: {}
-          };
-          setUser(newUser);
-          localStorage.setItem('currentUser', JSON.stringify(newUser));
-        }
-      } else if (!firebaseUser) {
-        setUser(null);
-        localStorage.removeItem('currentUser');
-      }
-    });
-    return () => unsubscribe();
+    if (!user) {
+       // Mock initialization if needed
+    }
   }, []);
 
-  // --- Auth & context functions ---
   const login = async (email: string, password: string, selectedRole: UserRole = UserRole.STUDENT) => {
-    const cred = await signInWithEmailAndPassword(auth, email, password);
-    const token = await getIdTokenResult(cred.user);
-    const isAdmin = token.claims.admin === true;
+    const isAdmin = selectedRole === UserRole.ADMIN;
     setUser({
-      id: cred.user.uid,
-      name: cred.user.displayName || 'No Name',
-      email: cred.user.email || '',
+      id: 'mock-uid',
+      name: 'Demo User',
+      email: email,
       role: isAdmin ? UserRole.ADMIN : UserRole.STUDENT,
       streak: 0,
       points: 0,
@@ -129,10 +130,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const register = async (name: string, email: string, password: string) => {
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(cred.user, { displayName: name });
     setUser({
-      id: cred.user.uid,
+      id: 'mock-uid-new',
       name,
       email,
       role: UserRole.STUDENT,
@@ -145,7 +144,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const logout = async () => {
-    await signOut(auth);
     setUser(null);
     localStorage.removeItem('currentUser');
   };
@@ -180,6 +178,66 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setFlashCards([...flashCards, { id: Date.now().toString(), text, interval }]);
   };
 
+  const addAnnouncement = (text: string) => {
+    const newAnnouncement = { id: Date.now().toString(), text };
+    setAnnouncements(prev => [newAnnouncement, ...prev]);
+  };
+
+  // --- Library Methods ---
+
+  const addLibraryItem = (item: Omit<LibraryItem, 'id' | 'createdAt' | 'userNotes'>) => {
+    const newItem: LibraryItem = {
+      ...item,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      userNotes: ''
+    };
+    
+    // Check for storage quota roughly
+    try {
+        const testString = JSON.stringify([...libraryItems, newItem]);
+        if (testString.length > 4500000) { // Safety buffer before 5MB
+            alert("Storage limit reached! Please delete some items before adding new files.");
+            return;
+        }
+        setLibraryItems(prev => [newItem, ...prev]);
+    } catch (e) {
+        alert("File too large for local storage browser limit (5MB). Please try a smaller file or use a Link.");
+    }
+  };
+
+  const updateLibraryItemNote = (id: string, note: string) => {
+    setLibraryItems(prev => prev.map(item => item.id === id ? { ...item, userNotes: note } : item));
+  };
+
+  const deleteLibraryItem = (id: string) => {
+    setLibraryItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  const addReadingLog = (itemId: string, itemTitle: string, durationSeconds: number) => {
+    const newLog: ReadingLog = {
+      id: Date.now().toString(),
+      itemId,
+      itemTitle,
+      durationSeconds,
+      date: new Date().toISOString()
+    };
+    setReadingLogs(prev => [newLog, ...prev]);
+    if (user) {
+        const pointsEarned = Math.floor(durationSeconds / 60); 
+        setUser({ ...user, points: user.points + pointsEarned });
+    }
+  };
+
+  // --- Community Methods ---
+  const joinCommunity = (id: string) => {
+    setCommunities(prev => prev.map(c => c.id === id ? { ...c, joined: true, members: c.members + 1 } : c));
+  };
+
+  const leaveCommunity = (id: string) => {
+    setCommunities(prev => prev.map(c => c.id === id ? { ...c, joined: false, members: c.members - 1 } : c));
+  };
+
   return (
     <AppContext.Provider value={{
       user,
@@ -188,15 +246,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       register,
       logout,
       weeks,
+      assessments,
       dailyGoals,
       flashCards,
       announcements,
+      libraryItems,
+      readingLogs,
+      communities,
       addGoal,
       toggleGoal,
       completeFocusCheck,
       submitDailyNote,
       addFlashCard,
-      addAnnouncement
+      addAnnouncement,
+      addLibraryItem,
+      updateLibraryItemNote,
+      addReadingLog,
+      deleteLibraryItem,
+      joinCommunity,
+      leaveCommunity
     }}>
       {children}
     </AppContext.Provider>
