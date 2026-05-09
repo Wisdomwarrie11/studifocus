@@ -3,7 +3,7 @@ import { HashRouter as Router, Routes, Route, Navigate, Outlet } from 'react-rou
 import { AppProvider, useApp } from './context/AppContext';
 import Sidebar from './components/Sidebar';
 import StudentDashboard from './pages/StudentDashboard';
-import Roadmap from './pages/Roadmap';
+import Roadmap from './pages/RoadmapWidget';
 import Progress from './pages/Progress';
 import FocusTimer from './pages/FocusTimer';
 import Assessment from './pages/Assessment';

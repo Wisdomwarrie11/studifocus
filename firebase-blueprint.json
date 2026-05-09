@@ -1,0 +1,79 @@
+{
+    "entities": {
+      "User": {
+        "title": "User Profile",
+        "description": "User profile with points and streak",
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "points": { "type": "integer" },
+          "streak": { "type": "integer" }
+        },
+        "required": ["id", "name", "email", "points", "streak"]
+      },
+      "Goal": {
+        "title": "Daily Goal",
+        "description": "A micro-goal for the day",
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "text": { "type": "string" },
+          "completed": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "userId", "text", "completed"]
+      },
+      "LibraryItem": {
+        "title": "Library Item",
+        "description": "Study material either as link or file",
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "title": { "type": "string" },
+          "category": { "type": "string" },
+          "type": { "type": "string", "enum": ["link", "text", "pdf"] },
+          "content": { "type": "string" },
+          "userNotes": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "userId", "title", "category", "type", "content"]
+      },
+      "RoadmapTask": {
+        "title": "Roadmap Task",
+        "description": "A big goal with sub-goals",
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "targetDate": { "type": "string" },
+          "avatarPosition": { "type": "number" },
+          "createdAt": { "type": "string" }
+        }
+      }
+    },
+    "firestore": {
+      "users/{userId}": {
+        "schema": "User",
+        "description": "Top-level user profiles"
+      },
+      "goals/{goalId}": {
+        "schema": "Goal",
+        "description": "Global goals collection with userId filtering"
+      },
+      "libraryItems/{itemId}": {
+        "schema": "LibraryItem",
+        "description": "Library materials"
+      },
+      "roadmapTasks/{taskId}": {
+        "schema": "RoadmapTask",
+        "description": "Gamified roadmaps"
+      }
+    }
+  }
+  

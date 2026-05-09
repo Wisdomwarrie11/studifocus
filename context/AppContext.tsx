@@ -1,31 +1,84 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, UserRole, CourseWeek, Assessment, DailyGoal, LibraryItem, ReadingLog, Community } from '../types';
-import {
-  getAuth,
-  onAuthStateChanged,
-  signOut,
-  getIdTokenResult,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  updateProfile
-  } from 'firebase/auth';
-  import { auth } from '../src/firebase';
+import { 
+  User, 
+  UserRole, 
+  CourseWeek, 
+  Assessment, 
+  DailyGoal, 
+  LibraryItem, 
+  ReadingLog, 
+  RoadmapTask, 
+  Activity, 
+  SubGoal,
+  Community,
+  FlashCard,
+  Announcement
+} from '../types';
+import { 
+  getAuth, 
+  onAuthStateChanged, 
+  signOut, 
+  signInWithPopup, 
+  GoogleAuthProvider,
+  User as FirebaseUser
+} from 'firebase/auth';
+import { 
+  doc, 
+  setDoc, 
+  getDoc, 
+  getDocs, 
+  collection, 
+  query, 
+  where, 
+  onSnapshot, 
+  updateDoc, 
+  deleteDoc, 
+  addDoc,
+  serverTimestamp,
+  orderBy,
+  limit
+} from 'firebase/firestore';
+import { auth, db } from '../src/firebase';
 
-interface FlashCard {
-  id: string;
-  text: string;
-  interval: 'hourly' | 'daily';
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
 }
 
-interface Announcement {
-  id: string;
-  text: string;
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: any;
 }
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
+// Mock implementation of auth for the purpose of this code generation if firebase file is missing in context
+// In a real scenario, this relies on the firebase.ts file existing.
 
 interface AppContextType {
   user: User | null;
+  loading: boolean;
   setUser: (user: User | null) => void;
-  login: (email: string, password: string, role?: UserRole) => Promise<void>;
+  login: () => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   weeks: CourseWeek[];
@@ -33,274 +86,355 @@ interface AppContextType {
   dailyGoals: DailyGoal[];
   flashCards: FlashCard[];
   announcements: Announcement[];
+  communities: Community[];
   libraryItems: LibraryItem[];
   readingLogs: ReadingLog[];
-  communities: Community[];
+  roadmapTasks: RoadmapTask[];
+  activities: Activity[];
   addGoal: (text: string) => void;
   toggleGoal: (id: string) => void;
-  completeFocusCheck: () => void;
-  submitDailyNote: (note: string) => void;
+  addActivity: (type: Activity['type'], metadata?: any, duration?: number) => void;
+  addPoints: (amount: number) => void;
   addFlashCard: (text: string, interval: 'hourly' | 'daily') => void;
   addAnnouncement: (text: string) => void;
+  addTopic: (weekId: string, topic: any) => void;
+  postAnnouncement: (announcement: any) => void;
+  completeFocusCheck: () => void;
+  submitDailyNote: (note: string) => void;
+  joinCommunity: (id: string) => void;
+  leaveCommunity: (id: string) => void;
+  addAnnouncementts?: (text: string) => void;
   
+  // Roadmap Methods
+  addRoadmapTask: (title: string, description: string, goals: string[]) => void;
+  updateRoadmapProgress: (taskId: string, goalId: string) => void;
+
   // Library Methods
-  addLibraryItem: (item: Omit<LibraryItem, 'id' | 'createdAt' | 'userNotes'>) => void;
+  addLibraryItem: (item: Omit<LibraryItem, 'id' | 'userId' | 'createdAt' | 'userNotes'>) => void;
   updateLibraryItemNote: (id: string, note: string) => void;
   addReadingLog: (itemId: string, itemTitle: string, durationSeconds: number) => void;
   deleteLibraryItem: (id: string) => void;
-  
-  // Community Methods
-  joinCommunity: (id: string) => void;
-  leaveCommunity: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('currentUser');
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  const [dailyGoals, setDailyGoals] = useState<DailyGoal[]>(() => {
-    const saved = localStorage.getItem('dailyGoals');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [flashCards, setFlashCards] = useState<FlashCard[]>(() => {
-    const saved = localStorage.getItem('flashCards');
-    return saved ? JSON.parse(saved) : [];
-  });
-
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [dailyGoals, setDailyGoals] = useState<DailyGoal[]>([]);
+  const [flashCards, setFlashCards] = useState<FlashCard[]>([]);
   const [weeks, setWeeks] = useState<CourseWeek[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [communities, setCommunities] = useState<Community[]>([
+    { id: '1', name: 'Frontend Masters', description: 'Deep dive into modern web tech.', members: 1240, platform: 'Discord', joined: false, link: '#' },
+    { id: '2', name: 'UI/UX Architects', description: 'Design discussions and critiques.', members: 850, platform: 'Slack', joined: true, link: '#' },
+    { id: '3', name: 'Code & Chill', description: 'Casual networking for students.', members: 2100, platform: 'WhatsApp', joined: false, link: '#' }
+  ]);
+  const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([]);
+  const [readingLogs, setReadingLogs] = useState<ReadingLog[]>([]);
+  const [roadmapTasks, setRoadmapTasks] = useState<RoadmapTask[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
 
-  const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
-    const saved = localStorage.getItem('announcements');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // --- Library State ---
-  const [libraryItems, setLibraryItems] = useState<LibraryItem[]>(() => {
-    const saved = localStorage.getItem('libraryItems');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [readingLogs, setReadingLogs] = useState<ReadingLog[]>(() => {
-    const saved = localStorage.getItem('readingLogs');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // --- Community State ---
-  const initialCommunities: Community[] = [
-    { id: '1', name: 'Midnight Scholars', description: 'For those who burn the midnight oil. 24/7 accountability.', members: 420, platform: 'Discord', joined: false, link: '#' },
-    { id: '2', name: 'Med School Grind', description: 'Case studies, flashcards, and group reading sessions.', members: 89, platform: 'Slack', joined: false, link: '#' },
-    { id: '3', name: 'Pomodoro Power', description: 'Group timers and productivity hacks.', members: 1250, platform: 'WhatsApp', joined: false, link: '#' },
-    { id: '4', name: 'CS Algorithms', description: 'Daily LeetCode and textbook reading group.', members: 300, platform: 'Discord', joined: false, link: '#' }
-  ];
-
-  const [communities, setCommunities] = useState<Community[]>(() => {
-    const saved = localStorage.getItem('communities');
-    return saved ? JSON.parse(saved) : initialCommunities;
-  });
-
-  // --- Persistence ---
+  // --- Auth & Data Listener ---
   useEffect(() => {
-    if (user) localStorage.setItem('currentUser', JSON.stringify(user));
-  }, [user]);
-
-  useEffect(() => localStorage.setItem('dailyGoals', JSON.stringify(dailyGoals)), [dailyGoals]);
-  useEffect(() => localStorage.setItem('flashCards', JSON.stringify(flashCards)), [flashCards]);
-  useEffect(() => localStorage.setItem('announcements', JSON.stringify(announcements)), [announcements]);
-  useEffect(() => localStorage.setItem('libraryItems', JSON.stringify(libraryItems)), [libraryItems]);
-  useEffect(() => localStorage.setItem('readingLogs', JSON.stringify(readingLogs)), [readingLogs]);
-  useEffect(() => localStorage.setItem('communities', JSON.stringify(communities)), [communities]);
-
-// --- Firebase auth listener ---
-useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-  if (firebaseUser && !user) {
-  const saved = localStorage.getItem('currentUser');
-  if (saved) setUser(JSON.parse(saved));
-  else {
-  const newUser: User = {
-  id: firebaseUser.uid,
-  name: firebaseUser.displayName || 'No Name',
-  email: firebaseUser.email || '',
-  role: UserRole.STUDENT,
-  streak: 0,
-  points: 0,
-  badges: [],
-  completedTopics: [],
-  assessmentScores: {}
-  };
-  setUser(newUser);
-  localStorage.setItem('currentUser', JSON.stringify(newUser));
-  }
-  } else if (!firebaseUser) {
-  setUser(null);
-  localStorage.removeItem('currentUser');
-  }
-  });
-  return () => unsubscribe();
-  }, []);
-  
-  // --- Auth & context functions ---
-  const login = async (email: string, password: string, selectedRole: UserRole = UserRole.STUDENT) => {
-  const cred = await signInWithEmailAndPassword(auth, email, password);
-  const token = await getIdTokenResult(cred.user);
-  const isAdmin = token.claims.admin === true;
-  setUser({
-  id: cred.user.uid,
-  name: cred.user.displayName || 'No Name',
-  email: cred.user.email || '',
-  role: isAdmin ? UserRole.ADMIN : UserRole.STUDENT,
-  streak: 0,
-  points: 0,
-  badges: [],
-  completedTopics: [],
-  assessmentScores: {}
-  });
-  };
-  const register = async (name: string, email: string, password: string) => {
-  const cred = await createUserWithEmailAndPassword(auth, email, password);
-  await updateProfile(cred.user, { displayName: name });
-  setUser({
-  id: cred.user.uid,
-  name,
-  email,
-  role: UserRole.STUDENT,
-  streak: 0,
-  points: 0,
-  badges: [],
-  completedTopics: [],
-  assessmentScores: {}
-  });
-  };
-  const logout = async () => {
-  await signOut(auth);
-  setUser(null);
-  localStorage.removeItem('currentUser');
-  };
-
-
-  const addGoal = (text: string) => setDailyGoals([...dailyGoals, { id: Date.now().toString(), text, completed: false }]);
-
-  const toggleGoal = (id: string) => {
-    if (!user) return;
-    setDailyGoals(goals =>
-      goals.map(g => {
-        if (g.id === id) {
-          const completed = !g.completed;
-          if (completed) setUser({ ...user, points: user.points + 10 });
-          return { ...g, completed };
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // Fetch or create user profile
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        let userData: User;
+        if (!userDoc.exists()) {
+          userData = {
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || 'Student',
+            email: firebaseUser.email || '',
+            role: UserRole.STUDENT,
+            streak: 1,
+            points: 0,
+            badges: [],
+            completedTopics: [],
+            assessmentScores: {}
+          };
+          await setDoc(userDocRef, userData);
+        } else {
+          userData = userDoc.data() as User;
         }
-        return g;
-      })
-    );
+        setUser(userData);
+
+        // Set up real-time listeners for all user data
+        const qGoals = query(collection(db, 'goals'), where('userId', '==', firebaseUser.uid));
+        const unsubGoals = onSnapshot(qGoals, (snap) => setDailyGoals(snap.docs.map(d => ({ id: d.id, ...d.data() } as DailyGoal))), (err) => handleFirestoreError(err, OperationType.LIST, 'goals'));
+
+        const qLibrary = query(collection(db, 'libraryItems'), where('userId', '==', firebaseUser.uid));
+        const unsubLibrary = onSnapshot(qLibrary, (snap) => setLibraryItems(snap.docs.map(d => ({ id: d.id, ...d.data() } as LibraryItem))), (err) => handleFirestoreError(err, OperationType.LIST, 'libraryItems'));
+
+        const qRoadmap = query(collection(db, 'roadmapTasks'), where('userId', '==', firebaseUser.uid));
+        const unsubRoadmap = onSnapshot(qRoadmap, (snap) => setRoadmapTasks(snap.docs.map(d => ({ id: d.id, ...d.data() } as RoadmapTask))), (err) => handleFirestoreError(err, OperationType.LIST, 'roadmapTasks'));
+
+        const qLogs = query(collection(db, 'readingLogs'), where('userId', '==', firebaseUser.uid), orderBy('date', 'desc'), limit(10));
+        const unsubLogs = onSnapshot(qLogs, (snap) => setReadingLogs(snap.docs.map(d => ({ id: d.id, ...d.data() } as ReadingLog))), (err) => handleFirestoreError(err, OperationType.LIST, 'readingLogs'));
+
+        const qActivities = query(collection(db, 'activities'), where('userId', '==', firebaseUser.uid), orderBy('timestamp', 'desc'), limit(20));
+        const unsubActivities = onSnapshot(qActivities, (snap) => setActivities(snap.docs.map(d => ({ id: d.id, ...d.data() } as Activity))), (err) => handleFirestoreError(err, OperationType.LIST, 'activities'));
+
+        setLoading(false);
+        return () => {
+          unsubGoals();
+          unsubLibrary();
+          unsubRoadmap();
+          unsubLogs();
+          unsubActivities();
+        };
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribeAuth();
+  }, []);
+
+  const login = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error("Login Error", error);
+    }
+  };
+
+  const logout = async () => {
+    await signOut(auth);
+  };
+
+  const addGoal = async (text: string) => {
+    if (!user) return;
+    try {
+      await addDoc(collection(db, 'goals'), {
+        userId: user.id,
+        text,
+        completed: false,
+        createdAt: new Date().toISOString()
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, 'goals');
+    }
+  };
+
+  const toggleGoal = async (id: string) => {
+    if (!user) return;
+    const goal = dailyGoals.find(g => g.id === id);
+    if (!goal) return;
+    
+    try {
+      const newStatus = !goal.completed;
+      await updateDoc(doc(db, 'goals', id), { completed: newStatus });
+      
+      if (newStatus) {
+        const newPoints = user.points + 10;
+        await updateDoc(doc(db, 'users', user.id), { points: newPoints });
+        setUser({ ...user, points: newPoints });
+        addActivity('goal_completion', { goalId: id, text: goal.text });
+      }
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `goals/${id}`);
+    }
+  };
+
+  const addActivity = async (type: Activity['type'], metadata: any = {}, duration?: number) => {
+    if (!user) return;
+    try {
+        await addDoc(collection(db, 'activities'), {
+            userId: user.id,
+            type,
+            duration,
+            metadata,
+            timestamp: new Date().toISOString()
+        });
+    } catch (err) {
+        handleFirestoreError(err, OperationType.CREATE, 'activities');
+    }
+  };
+
+  const addRoadmapTask = async (title: string, description: string, goalTexts: string[]) => {
+    if (!user) return;
+    const goals: SubGoal[] = goalTexts.map(text => ({
+        id: Math.random().toString(36).substr(2, 9),
+        text,
+        completed: false
+    }));
+
+    try {
+        await addDoc(collection(db, 'roadmapTasks'), {
+            userId: user.id,
+            title,
+            description,
+            targetDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            goals,
+            avatarPosition: 0,
+            createdAt: new Date().toISOString()
+        });
+    } catch (err) {
+        handleFirestoreError(err, OperationType.CREATE, 'roadmapTasks');
+    }
+  };
+
+  const updateRoadmapProgress = async (taskId: string, goalId: string) => {
+    if (!user) return;
+    const task = roadmapTasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const updatedGoals = task.goals.map(g => g.id === goalId ? { ...g, completed: true } : g);
+    const completedCount = updatedGoals.filter(g => g.completed).length;
+    const newPos = (completedCount / updatedGoals.length) * 100;
+
+    try {
+        await updateDoc(doc(db, 'roadmapTasks', taskId), { 
+            goals: updatedGoals, 
+            avatarPosition: newPos 
+        });
+        
+        const newPoints = user.points + 50;
+        await updateDoc(doc(db, 'users', user.id), { points: newPoints });
+        setUser({ ...user, points: newPoints });
+        addActivity('roadmap_progress', { taskId, title: task.title, goalId, progress: newPos });
+    } catch (err) {
+        handleFirestoreError(err, OperationType.UPDATE, `roadmapTasks/${taskId}`);
+    }
+  };
+
+  const addPoints = async (amount: number) => {
+    if (!user) return;
+    try {
+        const newPoints = user.points + amount;
+        await updateDoc(doc(db, 'users', user.id), { points: newPoints });
+        setUser({ ...user, points: newPoints });
+    } catch (err) {
+        handleFirestoreError(err, OperationType.UPDATE, `users/${user.id}`);
+    }
   };
 
   const completeFocusCheck = () => {
-    if (!user) return;
-    setUser({ ...user, points: user.points + 2 });
+    addPoints(2);
   };
 
   const submitDailyNote = (note: string) => {
-    if (!user) return;
-    setUser({ ...user, points: user.points + 10 });
+    addPoints(10);
   };
 
-  const addFlashCard = (text: string, interval: 'hourly' | 'daily') => {
-    setFlashCards([...flashCards, { id: Date.now().toString(), text, interval }]);
+  const addTopic = (weekId: string, topic: any) => {
+    setWeeks(prev => prev.map(w => w.id === weekId ? { ...w, topics: [...w.topics, topic] } : w));
   };
 
-  const addAnnouncement = (text: string) => {
-    const newAnnouncement = { id: Date.now().toString(), text };
-    setAnnouncements(prev => [newAnnouncement, ...prev]);
+  const postAnnouncement = (announcement: any) => {
+    setAnnouncements(prev => [announcement, ...prev]);
   };
 
-  // --- Library Methods ---
-
-  const addLibraryItem = (item: Omit<LibraryItem, 'id' | 'createdAt' | 'userNotes'>) => {
-    const newItem: LibraryItem = {
-      ...item,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      userNotes: ''
-    };
-    
-    // Check for storage quota roughly
-    try {
-        const testString = JSON.stringify([...libraryItems, newItem]);
-        if (testString.length > 4500000) { // Safety buffer before 5MB
-            alert("Storage limit reached! Please delete some items before adding new files.");
-            return;
-        }
-        setLibraryItems(prev => [newItem, ...prev]);
-    } catch (e) {
-        alert("File too large for local storage browser limit (5MB). Please try a smaller file or use a Link.");
-    }
-  };
-
-  const updateLibraryItemNote = (id: string, note: string) => {
-    setLibraryItems(prev => prev.map(item => item.id === id ? { ...item, userNotes: note } : item));
-  };
-
-  const deleteLibraryItem = (id: string) => {
-    setLibraryItems(prev => prev.filter(item => item.id !== id));
-  };
-
-  const addReadingLog = (itemId: string, itemTitle: string, durationSeconds: number) => {
-    const newLog: ReadingLog = {
-      id: Date.now().toString(),
-      itemId,
-      itemTitle,
-      durationSeconds,
-      date: new Date().toISOString()
-    };
-    setReadingLogs(prev => [newLog, ...prev]);
-    if (user) {
-        const pointsEarned = Math.floor(durationSeconds / 60); 
-        setUser({ ...user, points: user.points + pointsEarned });
-    }
-  };
-
-  // --- Community Methods ---
   const joinCommunity = (id: string) => {
-    setCommunities(prev => prev.map(c => c.id === id ? { ...c, joined: true, members: c.members + 1 } : c));
+    setCommunities(prev => prev.map(c => c.id === id ? { ...c, joined: true } : c));
   };
 
   const leaveCommunity = (id: string) => {
-    setCommunities(prev => prev.map(c => c.id === id ? { ...c, joined: false, members: c.members - 1 } : c));
+    setCommunities(prev => prev.map(c => c.id === id ? { ...c, joined: false } : c));
+  };
+
+  const addFlashCard = (text: string, interval: 'hourly' | 'daily') => {
+    setFlashCards(prev => [...prev, { id: Date.now().toString(), userId: user?.id || '', content: text, reminderInterval: interval }]);
+  };
+
+  const addAnnouncement = (text: string) => {
+    setAnnouncements(prev => [{ id: Date.now().toString(), title: 'Announcement', content: text, createdAt: new Date().toISOString() }, ...prev]);
+  };
+
+  const addLibraryItem = async (item: Omit<LibraryItem, 'id' | 'userId' | 'createdAt' | 'userNotes'>) => {
+    if (!user) return;
+    try {
+        await addDoc(collection(db, 'libraryItems'), {
+            ...item,
+            userId: user.id,
+            createdAt: new Date().toISOString(),
+            userNotes: ''
+        });
+    } catch (err) {
+        handleFirestoreError(err, OperationType.CREATE, 'libraryItems');
+    }
+  };
+
+  const updateLibraryItemNote = async (id: string, note: string) => {
+    try {
+      await updateDoc(doc(db, 'libraryItems', id), { userNotes: note });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `libraryItems/${id}`);
+    }
+  };
+
+  const deleteLibraryItem = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'libraryItems', id));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `libraryItems/${id}`);
+    }
+  };
+
+  const addReadingLog = async (itemId: string, itemTitle: string, durationSeconds: number) => {
+    if (!user) return;
+    try {
+        await addDoc(collection(db, 'readingLogs'), {
+            userId: user.id,
+            itemId,
+            itemTitle,
+            durationSeconds,
+            date: new Date().toISOString()
+        });
+        
+        const newPoints = user.points + Math.floor(durationSeconds / 60);
+        await updateDoc(doc(db, 'users', user.id), { points: newPoints });
+        setUser({ ...user, points: newPoints });
+        addActivity('reading', { itemId, itemTitle, durationSeconds });
+    } catch (err) {
+        handleFirestoreError(err, OperationType.CREATE, 'readingLogs');
+    }
   };
 
   return (
     <AppContext.Provider value={{
       user,
       setUser,
+      loading, // Added loading state
       login,
-      register,
+      register: async () => {}, // Register handled by Google login
       logout,
       weeks,
       assessments,
       dailyGoals,
       flashCards,
       announcements,
+      communities,
       libraryItems,
       readingLogs,
-      communities,
+      roadmapTasks,
+      activities,
       addGoal,
       toggleGoal,
-      completeFocusCheck,
-      submitDailyNote,
+      addActivity,
+      addPoints,
       addFlashCard,
       addAnnouncement,
+      addTopic,
+      postAnnouncement,
+      completeFocusCheck,
+      submitDailyNote,
+      joinCommunity,
+      leaveCommunity,
+      addAnnouncementts: addAnnouncement,
+      addRoadmapTask,
+      updateRoadmapProgress,
       addLibraryItem,
       updateLibraryItemNote,
       addReadingLog,
-      deleteLibraryItem,
-      joinCommunity,
-      leaveCommunity
+      deleteLibraryItem
     }}>
       {children}
     </AppContext.Provider>

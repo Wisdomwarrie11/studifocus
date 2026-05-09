@@ -1,58 +1,40 @@
 import { GoogleGenAI } from "@google/genai";
 
-const getAIClient = () => {
-  if (!process.env.API_KEY) {
-    console.warn("API Key not found in environment variables.");
-    return null;
-  }
-  return new GoogleGenAI({ apiKey: process.env.API_KEY });
-};
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-export const getMotivationalCoach = async (
-  userName: string,
-  streak: number,
-  points: number,
-  recentActivity: string
-): Promise<string> => {
-  const client = getAIClient();
-  if (!client) return "Keep pushing forward! Your consistency is key.";
-
+export const getMotivationalCoach = async (name: string, streak: number, points: number, context: string): Promise<string> => {
   try {
-    const response = await client.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `You are a strict but encouraging study accountability coach. 
-      The student, ${userName}, has a ${streak}-day streak and ${points} points.
-      Their recent activity: ${recentActivity}.
-      
-      Generate a short (max 2 sentences), punchy motivational message. 
-      If the streak is high, praise discipline. If low, urge them to start.
-      Do not use hashtags.`,
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `You are a motivational study coach. User ${name} has a ${streak} day streak and ${points} points. 
+      The current context is: ${context}. Keep the message short (max 2 sentences), encouraging, and actionable.`,
     });
-    return response.text || "Stay focused and disciplined.";
+    return response.text || `Keep going, ${name}! You're doing great.`;
   } catch (error) {
-    console.error("Gemini API Error:", error);
-    return "Discipline is choosing between what you want now and what you want most.";
+    console.error("Gemini Error:", error);
+    return `Keep pushing forward, ${name}! Your progress is amazing.`;
   }
 };
 
-export const analyzeProgress = async (
-  history: { date: string; score: number }[]
-): Promise<string> => {
-  const client = getAIClient();
-  if (!client) return "Analytics unavailable without API key.";
+export const analyzeActivities = async (activities: any[], readingLogs: any[]): Promise<string> => {
+    try {
+      const activitySummary = activities.map(a => `${a.type} at ${a.timestamp}`).join(', ');
+      const readingSummary = readingLogs.map(l => `${l.itemTitle} for ${l.durationSeconds}s`).join(', ');
 
-  try {
-    const dataStr = JSON.stringify(history);
-    const response = await client.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `Analyze this student's assessment history: ${dataStr}.
-      Identify the trend (improving, declining, or plateauing).
-      Provide 1 specific actionable advice in bullet points.
-      Keep it under 50 words.`,
-    });
-    return response.text || "Review your past weeks to find weak spots.";
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    return "Consistent effort yields the best results.";
-  }
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: `Analyze these student activities and reading logs:
+        Activities: ${activitySummary}
+        Reading: ${readingSummary}
+        
+        Provide a concise "Smart Analysis" (max 3 sentences) identifying patterns or suggesting improvements for their study habits. 
+        Focus on productivity and balance.`,
+      });
+      return response.text || "Your study habits show great potential. Stay consistent!";
+    } catch (error) {
+      console.error("Gemini Error:", error);
+      return "Analyzing your productivity data... you're off to a solid start!";
+    }
 };
+
+export const analyzeProgress = analyzeActivities;

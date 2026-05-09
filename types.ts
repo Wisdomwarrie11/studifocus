@@ -68,6 +68,32 @@ export interface DailyGoal {
   completed: boolean;
 }
 
+export interface SubGoal {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
+export interface RoadmapTask {
+  id: string;
+  userId: string;
+  title: string;
+  description: string;
+  targetDate: string;
+  goals: SubGoal[];
+  avatarPosition: number; // 0 to 100 percentage
+  createdAt: string;
+}
+
+export interface Activity {
+  id: string;
+  userId: string;
+  type: 'focus' | 'reading' | 'goal_completion' | 'roadmap_progress';
+  duration?: number;
+  metadata?: any;
+  timestamp: string;
+}
+
 export interface Announcement {
   id: string;
   title: string;
@@ -93,21 +119,17 @@ export interface FlashCard {
 
 export interface LibraryItem {
   id: string;
+  userId: string;
   title: string;
   category: string; // e.g., "Biology 101", "Personal Development"
-  type: 'link' | 'text' | 'pdf';
+  type: 'link' | 'text' | 'pdf' | 'file';
   content: string; // URL or actual text content
   userNotes: string;
   createdAt: string;
+  fileName?: string;
+  fileType?: string;
 }
 
-export interface ReadingLog {
-  id: string;
-  itemId: string;
-  itemTitle: string;
-  durationSeconds: number;
-  date: string;
-}
 export interface Community {
   id: string;
   name: string;
@@ -116,4 +138,12 @@ export interface Community {
   platform: 'Slack' | 'Discord' | 'WhatsApp';
   joined: boolean;
   link: string;
+}
+
+export interface ReadingLog {
+  id: string;
+  itemId: string;
+  itemTitle: string;
+  durationSeconds: number;
+  date: string;
 }
