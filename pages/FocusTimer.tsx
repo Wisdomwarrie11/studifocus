@@ -6,8 +6,8 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { LibraryItem } from '../types';
-import RoadmapWidget from './RoadmapWidget';
-import AnalyticsDashboard from './AnalyticsDashboard';
+import RoadmapWidget from '../pages/RoadmapWidget';
+import AnalyticsDashboard from '../pages/AnalyticsDashboard';
 import { supabase } from '../src/supabase';
 
 const FocusTimer: React.FC = () => {
@@ -257,24 +257,24 @@ const FocusTimer: React.FC = () => {
 
   if (!user) {
     return (
-        <div className="min-h-screen bg-indigo-600 flex flex-col items-center justify-center p-6 text-white text-center">
+        <div className="min-h-screen bg-deep-blue flex flex-col items-center justify-center p-6 text-white text-center">
             <div className="bg-white/10 p-6 rounded-full mb-8 backdrop-blur-xl animate-bounce">
-                <Brain size={80} className="text-white" />
+                <Brain size={80} className="text-brand-orange" />
             </div>
             <h1 className="text-4xl font-black mb-4 tracking-tight">Student Focus</h1>
-            <p className="text-indigo-100 max-w-sm mb-12 text-lg">Your personalized gamified journey to academic mastery, now synced across devices.</p>
+            <p className="text-white/80 max-w-sm mb-12 text-lg">Your personalized gamified journey to academic mastery, now synced across devices.</p>
             
             <button 
                 onClick={login}
-                className="bg-white text-indigo-600 px-10 py-5 rounded-3xl font-black text-xl shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center space-x-3 group"
+                className="bg-brand-orange text-white px-10 py-5 rounded-3xl font-black text-xl shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center space-x-3 group"
             >
-                <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center group-hover:rotate-12 transition-transform">
-                    <Zap size={20} className="text-indigo-600" />
+                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center group-hover:rotate-12 transition-transform">
+                    <Zap size={20} className="text-white" />
                 </div>
-                <span>Connect with Google</span>
+                <span>Start Your Journey</span>
             </button>
             
-            <div className="mt-12 flex items-center space-x-6 text-indigo-200">
+            <div className="mt-12 flex items-center space-x-6 text-white/40">
                 <div className="flex flex-col items-center">
                     <CheckSquare size={20} />
                     <span className="text-[10px] font-bold uppercase mt-1 tracking-widest">Roadmaps</span>
@@ -289,39 +289,39 @@ const FocusTimer: React.FC = () => {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto min-h-screen">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto min-h-screen bg-white">
       
       {/* Header & Tabs */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-8 border-b border-gray-100 pb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Virtual Study Room</h1>
+          <h1 className="text-3xl font-black text-deep-blue mb-2 tracking-tight">Virtual Study Room</h1>
           <div className="flex items-center space-x-4">
-            <p className="text-gray-500">Welcome back, <span className="text-indigo-600 font-bold">{user.name}</span></p>
+            <p className="text-gray-500">Welcome back, <span className="text-brand-orange font-bold font-mono">{user.name}</span></p>
             <button onClick={logout} className="text-[10px] uppercase tracking-widest font-black text-gray-400 hover:text-red-500 transition-colors">Logout</button>
           </div>
         </div>
-        <div className="flex bg-gray-100 p-1 rounded-xl mt-4 md:mt-0">
+        <div className="flex bg-gray-100 p-1 rounded-2xl mt-4 md:mt-0 shadow-inner">
           <button 
             onClick={() => setActiveTab('focus')}
-            className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'focus' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'focus' ? 'bg-deep-blue text-white shadow-lg' : 'text-gray-500 hover:text-deep-blue'}`}
           >
-            Focus Timer
+            Focus
           </button>
           <button 
             onClick={() => setActiveTab('library')}
-            className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'library' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'library' ? 'bg-deep-blue text-white shadow-lg' : 'text-gray-500 hover:text-deep-blue'}`}
           >
-            My Library
+            Library
           </button>
           <button 
             onClick={() => setActiveTab('roadmap')}
-            className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'roadmap' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'roadmap' ? 'bg-deep-blue text-white shadow-lg' : 'text-gray-500 hover:text-deep-blue'}`}
           >
             Roadmap
           </button>
           <button 
             onClick={() => setActiveTab('analytics')}
-            className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'analytics' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'analytics' ? 'bg-deep-blue text-white shadow-lg' : 'text-gray-500 hover:text-deep-blue'}`}
           >
             Analytics
           </button>
@@ -344,7 +344,7 @@ const FocusTimer: React.FC = () => {
               </div>
 
               <div className="flex space-x-6">
-                <button onClick={toggleTimer} className="w-16 h-16 rounded-full bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-700 shadow-lg transition-transform active:scale-95">
+                <button onClick={toggleTimer} className="w-16 h-16 rounded-full bg-deep-blue text-white flex items-center justify-center hover:bg-deep-blue/90 shadow-lg transition-transform active:scale-95">
                   {isActive ? <Pause size={28} /> : <Play size={28} />}
                 </button>
                 <button onClick={resetTimer} className="w-16 h-16 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-gray-200 transition-colors">
@@ -352,23 +352,23 @@ const FocusTimer: React.FC = () => {
                 </button>
               </div>
               <p className="mt-6 text-gray-400 text-sm flex items-center">
-                <Zap size={14} className="mr-1 text-yellow-500" /> Earn 2 pts per completed session
+                <Zap size={14} className="mr-1 text-brand-orange" /> Earn 2 pts per completed session
               </p>
             </div>
 
             {/* Daily Note */}
-            <div className="bg-white rounded-2xl shadow-md p-6">
-              <h3 className="font-bold text-gray-800 mb-4 flex items-center">
-                <PenTool className="mr-2 text-indigo-600" size={20} /> What did you learn today?
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h3 className="font-bold text-deep-blue mb-4 flex items-center">
+                <PenTool className="mr-2 text-brand-orange" size={20} /> What did you learn today?
               </h3>
               <textarea
-                className="w-full p-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-600 outline-none resize-none h-32"
+                className="w-full p-4 border border-gray-100 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brand-orange outline-none resize-none h-32 transition-all"
                 placeholder="Summarize your key takeaways..."
                 value={dailyNote}
                 onChange={(e) => setDailyNote(e.target.value)}
               />
               <div className="flex justify-end mt-3">
-                <button onClick={handleSaveNote} className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-all">
+                <button onClick={handleSaveNote} className="flex items-center bg-deep-blue text-white px-4 py-2 rounded-lg font-bold hover:bg-deep-blue/90 transition-all shadow-md">
                   <Save size={16} className="mr-2" /> {noteSaved ? 'Saved!' : 'Submit to Journal'}
                 </button>
               </div>
@@ -395,16 +395,16 @@ const FocusTimer: React.FC = () => {
 
               <form onSubmit={handleAddGoal} className="flex items-center space-x-2 border-t border-gray-100 pt-4">
                 <input type="text" placeholder="Add goal..." className="flex-1 text-sm border-none outline-none bg-transparent" value={newGoalText} onChange={(e) => setNewGoalText(e.target.value)} />
-                <button type="submit" className="text-indigo-600 bg-indigo-50 p-2 rounded-lg hover:bg-indigo-100 transition-colors">
+                <button type="submit" className="text-brand-orange bg-orange-50 p-2 rounded-lg hover:bg-orange-100 transition-colors">
                   <Plus size={16} />
                 </button>
               </form>
             </div>
 
             {/* Flashcards */}
-            <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
-              <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center">
-                <Bell className="mr-2 text-yellow-500" size={20} /> Flashcard Reminders
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h3 className="text-lg font-bold text-deep-blue mb-4 flex items-center">
+                <Bell className="mr-2 text-brand-orange" size={20} /> Flashcard Reminders
               </h3>
 
               <div className="space-y-4 mb-6 max-h-48 overflow-y-auto">
@@ -441,7 +441,7 @@ const FocusTimer: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <button 
                 onClick={() => setIsAddingMaterial(!isAddingMaterial)}
-                className="w-full flex items-center justify-center bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-colors mb-6 shadow-indigo-100 shadow-lg"
+                className="w-full flex items-center justify-center bg-brand-orange text-white py-3 rounded-xl font-bold hover:bg-brand-orange/90 transition-all mb-6 shadow-orange-100 shadow-lg"
               >
                 <Plus size={18} className="mr-2" /> Add Material
               </button>
@@ -452,10 +452,10 @@ const FocusTimer: React.FC = () => {
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors flex justify-between items-center ${selectedCategory === cat ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                    className={`w-full text-left px-4 py-2 rounded-lg text-sm font-bold transition-colors flex justify-between items-center ${selectedCategory === cat ? 'bg-deep-blue text-white' : 'text-gray-600 hover:bg-gray-50'}`}
                   >
                     <span>{cat}</span>
-                    <span className="bg-gray-100 text-gray-500 text-xs py-0.5 px-2 rounded-full">
+                    <span className={`text-[10px] py-0.5 px-2 rounded-full ${selectedCategory === cat ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
                       {cat === 'All' ? libraryItems.length : libraryItems.filter(i => i.category === cat).length}
                     </span>
                   </button>
@@ -465,8 +465,8 @@ const FocusTimer: React.FC = () => {
 
             {/* Reading Stats */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h3 className="text-sm font-bold text-gray-700 flex items-center mb-4">
-                <BarChart2 size={16} className="mr-2 text-indigo-500" /> Recent Sessions
+              <h3 className="text-sm font-bold text-deep-blue flex items-center mb-4">
+                <BarChart2 size={16} className="mr-2 text-brand-orange" /> Recent Sessions
               </h3>
               <div className="space-y-4">
                 {readingLogs.slice(0, 5).map(log => (
@@ -496,7 +496,7 @@ const FocusTimer: React.FC = () => {
                     <input 
                       type="text" 
                       placeholder="Title of Book / Article" 
-                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange outline-none"
                       value={newItemTitle}
                       onChange={e => setNewItemTitle(e.target.value)}
                       required
@@ -504,27 +504,27 @@ const FocusTimer: React.FC = () => {
                     <input 
                       type="text" 
                       placeholder="Course / Category (e.g. History)" 
-                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange outline-none"
                       value={newItemCategory}
                       onChange={e => setNewItemCategory(e.target.value)}
                       required
                     />
                   </div>
                   <div className="flex space-x-4">
-                    <label className={`flex items-center space-x-2 cursor-pointer p-3 border rounded-xl flex-1 ${newItemType === 'link' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200'}`}>
+                    <label className={`flex items-center space-x-2 cursor-pointer p-3 border rounded-xl flex-1 ${newItemType === 'link' ? 'border-brand-orange bg-orange-50' : 'border-gray-200'}`}>
                       <input type="radio" name="type" value="link" checked={newItemType === 'link'} onChange={() => setNewItemType('link')} className="hidden" />
-                      <ExternalLink size={16} className={newItemType === 'link' ? 'text-indigo-600' : 'text-gray-400'} />
-                      <span className={`font-medium ${newItemType === 'link' ? 'text-indigo-800' : 'text-gray-600'}`}>Link URL</span>
+                      <ExternalLink size={16} className={newItemType === 'link' ? 'text-brand-orange' : 'text-gray-400'} />
+                      <span className={`font-medium ${newItemType === 'link' ? 'text-brand-orange' : 'text-gray-600'}`}>Link URL</span>
                     </label>
-                    <label className={`flex items-center space-x-2 cursor-pointer p-3 border rounded-xl flex-1 ${newItemType === 'text' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200'}`}>
+                    <label className={`flex items-center space-x-2 cursor-pointer p-3 border rounded-xl flex-1 ${newItemType === 'text' ? 'border-brand-orange bg-orange-50' : 'border-gray-200'}`}>
                       <input type="radio" name="type" value="text" checked={newItemType === 'text'} onChange={() => setNewItemType('text')} className="hidden" />
-                      <BookOpen size={16} className={newItemType === 'text' ? 'text-indigo-600' : 'text-gray-400'} />
-                      <span className={`font-medium ${newItemType === 'text' ? 'text-indigo-800' : 'text-gray-600'}`}>Paste Text</span>
+                      <BookOpen size={16} className={newItemType === 'text' ? 'text-brand-orange' : 'text-gray-400'} />
+                      <span className={`font-medium ${newItemType === 'text' ? 'text-brand-orange' : 'text-gray-600'}`}>Paste Text</span>
                     </label>
-                    <label className={`flex items-center space-x-2 cursor-pointer p-3 border rounded-xl flex-1 ${newItemType === 'pdf' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200'}`}>
+                    <label className={`flex items-center space-x-2 cursor-pointer p-3 border rounded-xl flex-1 ${newItemType === 'pdf' ? 'border-brand-orange bg-orange-50' : 'border-gray-200'}`}>
                       <input type="radio" name="type" value="pdf" checked={newItemType === 'pdf'} onChange={() => setNewItemType('pdf')} className="hidden" />
-                      <BarChart2 size={16} className={newItemType === 'pdf' ? 'text-indigo-600' : 'text-gray-400'} />
-                      <span className={`font-medium ${newItemType === 'pdf' ? 'text-indigo-800' : 'text-gray-600'}`}>File / PDF</span>
+                      <BarChart2 size={16} className={newItemType === 'pdf' ? 'text-brand-orange' : 'text-gray-400'} />
+                      <span className={`font-medium ${newItemType === 'pdf' ? 'text-brand-orange' : 'text-gray-600'}`}>File / PDF</span>
                     </label>
                   </div>
                   
@@ -547,7 +547,7 @@ const FocusTimer: React.FC = () => {
                   ) : (
                     <textarea 
                         placeholder={newItemType === 'link' ? "https://..." : "Paste the article content here..."}
-                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none min-h-[100px]"
+                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange outline-none min-h-[100px]"
                         value={newItemContent}
                         onChange={e => setNewItemContent(e.target.value)}
                         required={newItemType !== 'pdf'}
@@ -558,7 +558,7 @@ const FocusTimer: React.FC = () => {
                     <button 
                         type="submit" 
                         disabled={isUploading}
-                        className="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                        className="bg-brand-orange text-white px-6 py-2 rounded-xl font-bold hover:bg-brand-orange/90 transition-colors disabled:opacity-50"
                     >
                       {isUploading ? 'Uploading...' : 'Save to Library'}
                     </button>
@@ -578,25 +578,25 @@ const FocusTimer: React.FC = () => {
                 filteredItems.map(item => (
                   <div key={item.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group relative">
                     <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={(e) => { e.stopPropagation(); deleteLibraryItem(item.id); }} className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                      <button onClick={(e) => { e.stopPropagation(); deleteLibraryItem(item.id); }} className="p-1.5 text-red-100 hover:text-red-600 hover:bg-red-50 rounded-lg">
                         <Trash2 size={16} />
                       </button>
                     </div>
                     <div className="flex items-start justify-between mb-4">
-                      <span className="inline-block px-2 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded uppercase tracking-wide">
+                      <span className="inline-block px-2 py-1 bg-orange-50 text-brand-orange text-xs font-bold rounded uppercase tracking-wide">
                         {item.category}
                       </span>
                     </div>
-                    <h3 className="font-bold text-gray-800 mb-2 line-clamp-2 min-h-[3rem]">{item.title}</h3>
-                    <div className="flex items-center text-xs text-gray-500 mb-6">
+                    <h3 className="font-bold text-deep-blue mb-2 line-clamp-2 min-h-[3rem] tracking-tight">{item.title}</h3>
+                    <div className="flex items-center text-xs text-gray-400 mb-6">
                       {item.type === 'link' ? <ExternalLink size={14} className="mr-1" /> : <BookOpen size={14} className="mr-1" />}
                       {item.type === 'link' ? 'External Link' : 'Text Document'}
-                      <span className="mx-2">•</span>
+                      <span className="mx-2 text-gray-200">•</span>
                       {new Date(item.createdAt).toLocaleDateString()}
                     </div>
                     <button 
                       onClick={() => openReader(item)}
-                      className="w-full flex items-center justify-center bg-gray-50 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors group-hover:bg-indigo-600 group-hover:text-white"
+                      className="w-full flex items-center justify-center bg-gray-50 text-gray-700 py-2 rounded-lg font-bold hover:bg-deep-blue hover:text-white transition-all group-hover:shadow-md"
                     >
                       Open Material <ChevronRight size={16} className="ml-1" />
                     </button>
@@ -629,19 +629,19 @@ const FocusTimer: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-6 bg-gray-50 px-6 py-2 rounded-xl border border-gray-200">
-              <div className={`text-2xl font-mono font-bold ${isReading ? 'text-indigo-600' : 'text-gray-400'}`}>
+            <div className="flex items-center space-x-6 bg-gray-50 px-6 py-3 rounded-2xl border border-gray-200 shadow-inner">
+              <div className={`text-2xl font-mono font-black ${isReading ? 'text-brand-orange' : 'text-gray-400'}`}>
                 {formatTime(readingSeconds)}
               </div>
               <div className="h-8 w-px bg-gray-300"></div>
               <button 
                 onClick={() => setIsReading(!isReading)}
-                className={`p-2 rounded-full text-white transition-colors ${isReading ? 'bg-amber-500 hover:bg-amber-600' : 'bg-green-500 hover:bg-green-600'}`}
+                className={`p-2 rounded-full text-white transition-all shadow-md ${isReading ? 'bg-amber-500 hover:bg-amber-600' : 'bg-green-500 hover:bg-green-600'}`}
               >
                 {isReading ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
               </button>
               {readingSeconds > 0 && (
-                 <button onClick={closeReader} className="text-red-500 font-semibold text-sm hover:underline">
+                 <button onClick={closeReader} className="text-red-500 font-black text-sm hover:underline">
                     Stop & Save
                  </button>
               )}
@@ -652,46 +652,46 @@ const FocusTimer: React.FC = () => {
           <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
              {/* Content Area */}
              <div className="flex-1 bg-gray-50 p-6 overflow-y-auto">
-               <div className="max-w-4xl mx-auto bg-white min-h-full shadow-sm rounded-xl p-8 lg:p-12">
+               <div className="max-w-4xl mx-auto bg-white min-h-full shadow-sm rounded-2xl p-8 lg:p-12 border border-gray-200">
                  {activeReaderItem.type === 'link' ? (
                    <div className="text-center py-12">
-                     <ExternalLink size={64} className="mx-auto text-indigo-200 mb-6" />
-                     <h3 className="text-xl font-bold text-gray-800 mb-4">External Resource</h3>
+                     <ExternalLink size={64} className="mx-auto text-orange-200 mb-6" />
+                     <h3 className="text-2xl font-black text-deep-blue mb-4 tracking-tight">External Resource</h3>
                      <p className="text-gray-500 mb-8 max-w-md mx-auto">This material is hosted externally. Click the button below to open it in a new tab. Keep this timer running to track your reading.</p>
                      <a 
                       href={activeReaderItem.content.startsWith('http') ? activeReaderItem.content : `https://${activeReaderItem.content}`} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="inline-flex items-center bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-transform hover:-translate-y-1"
+                      className="inline-flex items-center bg-brand-orange text-white px-8 py-3 rounded-xl font-bold hover:bg-brand-orange/90 transition-transform hover:-translate-y-1 shadow-lg shadow-orange-100"
                      >
                        Open Link <ExternalLink size={18} className="ml-2" />
                      </a>
-                     <div className="mt-12 p-4 bg-yellow-50 rounded-lg border border-yellow-100 text-left">
-                       <p className="text-sm text-yellow-800 flex items-center"><Zap size={16} className="mr-2" /> Pro Tip: You can copy paste important text from the link into your notes on the right!</p>
+                     <div className="mt-12 p-4 bg-orange-50 rounded-xl border border-orange-100 text-left">
+                       <p className="text-sm text-brand-orange flex items-center font-bold"><Zap size={16} className="mr-2" /> Pro Tip: You can copy paste important text from the link into your notes on the right!</p>
                      </div>
                    </div>
                  ) : (
-                   <div className="prose prose-indigo max-w-none">
-                     <p className="whitespace-pre-wrap text-gray-800 leading-relaxed text-lg">{activeReaderItem.content}</p>
+                   <div className="prose prose-orange max-w-none">
+                     <p className="whitespace-pre-wrap text-deep-blue/90 leading-relaxed text-lg">{activeReaderItem.content}</p>
                    </div>
                  )}
                </div>
              </div>
 
              {/* Notes Sidebar */}
-             <div className="w-full lg:w-96 bg-white border-l border-gray-200 flex flex-col h-1/2 lg:h-full shadow-xl z-10">
+             <div className="w-full lg:w-96 bg-white border-l border-gray-200 flex flex-col h-1/2 lg:h-full shadow-2xl z-10">
                <div className="p-4 border-b border-gray-100 bg-gray-50">
-                 <h3 className="font-bold text-gray-700 flex items-center">
-                   <PenTool size={16} className="mr-2 text-indigo-500" /> Study Notes
+                 <h3 className="font-bold text-deep-blue flex items-center">
+                   <PenTool size={16} className="mr-2 text-brand-orange" /> Study Notes
                  </h3>
                </div>
                <textarea 
-                 className="flex-1 p-4 resize-none outline-none focus:bg-indigo-50/30 transition-colors"
+                 className="flex-1 p-4 resize-none outline-none focus:bg-orange-50/20 transition-colors"
                  placeholder="Type your notes here while you read..."
                  value={activeReaderItem.userNotes}
                  onChange={handleReaderNoteChange}
                />
-               <div className="p-3 bg-gray-50 text-xs text-gray-400 text-center border-t border-gray-100">
+               <div className="p-3 bg-gray-50 text-xs text-gray-400 text-center border-t border-gray-100 font-medium">
                  Notes are saved automatically
                </div>
              </div>

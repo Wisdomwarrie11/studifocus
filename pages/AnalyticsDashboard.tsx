@@ -62,7 +62,7 @@ const AnalyticsDashboard: React.FC = () => {
     })).slice(0, 5);
   }, [readingLogs]);
 
-  const COLORS = ['#4f46e5', '#818cf8', '#c7d2fe', '#e0e7ff', '#6366f1'];
+  const COLORS = ['#001b3d', '#ff7a00', '#ff9d4d', '#1a3454', '#ffc18c'];
 
   // Smart insights using user data
   const insights = useMemo(() => {
@@ -88,7 +88,7 @@ const AnalyticsDashboard: React.FC = () => {
             title: 'Goal Mastery',
             value: `${goalsCompleted}`,
             desc: 'Micro-goals successfully conquered.',
-            icon: <Target className="text-indigo-500" />
+            icon: <Target className="text-brand-orange" />
         }
     ];
   }, [activities, readingLogs, dailyGoals, user]);
@@ -116,29 +116,31 @@ const AnalyticsDashboard: React.FC = () => {
       </div>
 
       {/* Smart Analysis Section */}
-      <div className="bg-gradient-to-br from-indigo-600 to-violet-700 p-8 rounded-3xl shadow-xl text-white relative overflow-hidden">
+      <div className="bg-gradient-to-br from-deep-blue to-blue-900 p-8 rounded-3xl shadow-2xl text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-10">
             <Brain size={120} />
         </div>
         <div className="relative z-10">
-            <div className="flex items-center space-x-2 mb-4">
-                <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                    <Wand2 size={20} className="text-white" />
+            <div className="flex items-center space-x-3 mb-6">
+                <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10">
+                    <Wand2 size={24} className="text-brand-orange" />
                 </div>
-                <h3 className="text-xl font-bold">AI Habit Analysis</h3>
+                <h3 className="text-2xl font-black tracking-tight">AI Habit Analysis</h3>
             </div>
             
             {isAnalyzing ? (
-                <div className="flex items-center space-x-2 animate-pulse">
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                    <span className="text-sm font-medium ml-2">Cracking the patterns...</span>
+                <div className="flex items-center space-x-3 animate-pulse bg-white/5 p-4 rounded-xl">
+                    <div className="w-3 h-3 bg-brand-orange rounded-full"></div>
+                    <div className="w-3 h-3 bg-brand-orange rounded-full"></div>
+                    <div className="w-3 h-3 bg-brand-orange rounded-full"></div>
+                    <span className="text-sm font-bold ml-2 text-white/70 tracking-widest uppercase">Cracking the patterns...</span>
                 </div>
             ) : (
-                <p className="text-lg leading-relaxed font-medium">
-                    {smartAnalysis || "Sync more study data to get a personalized habit analysis!"}
-                </p>
+                <div className="bg-white/5 p-6 rounded-2xl border border-white/5 backdrop-blur-sm">
+                    <p className="text-xl leading-relaxed font-bold text-white/90 italic">
+                        "{smartAnalysis || "Sync more study data to get a personalized habit analysis!"}"
+                    </p>
+                </div>
             )}
         </div>
       </div>
@@ -147,10 +149,10 @@ const AnalyticsDashboard: React.FC = () => {
         {/* Focus Chart */}
         <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
           <div className="flex justify-between items-center mb-8">
-            <h3 className="text-xl font-bold text-gray-800 flex items-center">
-              <Clock className="mr-2 text-indigo-600" size={24} /> Focus Distributions
+            <h3 className="text-xl font-black text-deep-blue flex items-center tracking-tight">
+              <Clock className="mr-2 text-brand-orange" size={24} /> Focus Distributions
             </h3>
-            <select className="text-xs font-bold bg-gray-50 border-none rounded-lg p-2 outline-none">
+            <select className="text-xs font-bold bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 outline-none text-gray-600">
                 <option>Last 7 Days</option>
                 <option>Last 30 Days</option>
             </select>
@@ -160,18 +162,18 @@ const AnalyticsDashboard: React.FC = () => {
               <AreaChart data={focusStats}>
                 <defs>
                     <linearGradient id="colorMins" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#ff7a00" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#ff7a00" stopOpacity={0}/>
                     </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }} />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#94a3b8' }} />
                 <YAxis hide />
                 <Tooltip 
                     contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
-                    itemStyle={{ color: '#4f46e5', fontWeight: 'bold' }}
+                    itemStyle={{ color: '#ff7a00', fontWeight: '900' }}
                 />
-                <Area type="monotone" dataKey="minutes" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorMins)" />
+                <Area type="monotone" dataKey="minutes" stroke="#ff7a00" strokeWidth={4} fillOpacity={1} fill="url(#colorMins)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -179,8 +181,8 @@ const AnalyticsDashboard: React.FC = () => {
 
         {/* Reading Categories */}
         <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
-          <h3 className="text-xl font-bold text-gray-800 mb-8 flex items-center">
-            <BookOpen className="mr-2 text-indigo-600" size={24} /> Knowledge Intake
+          <h3 className="text-xl font-black text-deep-blue mb-8 flex items-center tracking-tight">
+            <BookOpen className="mr-2 text-brand-orange" size={24} /> Knowledge Intake
           </h3>
           <div className="flex flex-col md:flex-row items-center">
             <div className="h-64 w-full md:w-1/2">
@@ -203,48 +205,48 @@ const AnalyticsDashboard: React.FC = () => {
             </div>
             <div className="w-full md:w-1/2 space-y-3 mt-4 md:mt-0 md:pl-8">
                 {readingStats.map((item, i) => (
-                    <div key={i} className="flex items-center justify-between">
+                    <div key={i} className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 transition-colors">
                         <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full mr-3" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                            <span className="text-sm font-medium text-gray-600 truncate max-w-[120px]">{item.name}</span>
+                            <div className="w-3 h-3 rounded-full mr-3 shadow-sm" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                            <span className="text-sm font-bold text-gray-600 truncate max-w-[120px]">{item.name}</span>
                         </div>
-                        <span className="text-sm font-bold text-gray-800">{item.value}m</span>
+                        <span className="text-sm font-black text-deep-blue">{item.value}m</span>
                     </div>
                 ))}
-                {readingStats.length === 0 && <p className="text-sm text-gray-400 italic">Start reading to see your intake data.</p>}
+                {readingStats.length === 0 && <p className="text-sm text-gray-400 italic font-medium">Start reading to see your intake data.</p>}
             </div>
           </div>
         </div>
       </div>
 
       {/* Activity Timeline */}
-      <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
-        <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-          <ActivityIcon className="mr-2 text-indigo-600" size={24} /> Recent Footprints
+      <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 font-sans">
+        <h3 className="text-xl font-black text-deep-blue mb-8 flex items-center tracking-tight">
+          <ActivityIcon className="mr-2 text-brand-orange" size={24} /> Recent Footprints
         </h3>
-        <div className="space-y-6">
+        <div className="space-y-8">
             {activities.slice(0, 5).map((activity, i) => (
-                <div key={activity.id} className="flex items-start space-x-4 relative">
+                <div key={activity.id} className="flex items-start space-x-6 relative">
                     {i !== activities.slice(0, 5).length - 1 && (
-                        <div className="absolute top-8 left-4 w-0.5 h-full bg-gray-100 -translate-x-1/2" />
+                        <div className="absolute top-10 left-5 w-0.5 h-full bg-gray-100 -translate-x-1/2" />
                     )}
-                    <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100 z-10">
-                        {activity.type === 'focus' && <Clock size={14} className="text-red-500" />}
-                        {activity.type === 'reading' && <BookOpen size={14} className="text-blue-500" />}
-                        {activity.type === 'roadmap_progress' && <TrendingUp size={14} className="text-green-500" />}
-                        {activity.type === 'goal_completion' && <Target size={14} className="text-indigo-500" />}
+                    <div className="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100 z-10 shadow-sm">
+                        {activity.type === 'focus' && <Clock size={18} className="text-red-500" />}
+                        {activity.type === 'reading' && <BookOpen size={18} className="text-brand-orange" />}
+                        {activity.type === 'roadmap_progress' && <TrendingUp size={18} className="text-green-500" />}
+                        {activity.type === 'goal_completion' && <Target size={18} className="text-deep-blue" />}
                     </div>
                     <div className="flex-1">
-                        <div className="flex justify-between">
-                            <h5 className="text-sm font-bold text-gray-800">
+                        <div className="flex justify-between items-center">
+                            <h5 className="text-md font-black text-deep-blue tracking-tight">
                                 {activity.type === 'focus' && 'Focus Session Completed'}
                                 {activity.type === 'reading' && `Read: ${activity.metadata?.itemTitle}`}
                                 {activity.type === 'roadmap_progress' && `Journey Progress: ${activity.metadata?.title}`}
                                 {activity.type === 'goal_completion' && 'Daily Goal Reached'}
                             </h5>
-                            <span className="text-[10px] font-bold text-gray-400 uppercase">{new Date(activity.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-2 py-1 rounded">{new Date(activity.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-sm text-gray-500 mt-2 font-medium">
                             {activity.type === 'focus' && `You focused for ${Math.floor((activity.duration || 0) / 60)} minutes.`}
                             {activity.type === 'reading' && `Spent ${Math.floor((activity.metadata?.durationSeconds || 0) / 60)} minutes learning.`}
                             {activity.type === 'roadmap_progress' && `Completed a milestone for your big goal.`}
@@ -254,9 +256,9 @@ const AnalyticsDashboard: React.FC = () => {
                 </div>
             ))}
             {activities.length === 0 && (
-                <div className="py-12 text-center">
-                    <Sparkles size={48} className="mx-auto text-gray-200 mb-4" />
-                    <p className="text-gray-400">Your journey footprint will appear here once you start studying.</p>
+                <div className="py-16 text-center">
+                    <Sparkles size={64} className="mx-auto text-orange-100 mb-6 animate-pulse" />
+                    <p className="text-gray-400 font-bold italic">Your journey footprint will appear here once you start studying.</p>
                 </div>
             )}
         </div>

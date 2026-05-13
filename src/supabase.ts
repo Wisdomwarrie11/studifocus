@@ -2,24 +2,36 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 let supabaseInstance: SupabaseClient | null = null;
 
-export const getSupabase = (): SupabaseClient => {
+export const getSupabase = (): SupabaseClient | null => {
   if (supabaseInstance) return supabaseInstance;
 
-  const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY;
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Supabase URL and Anon Key are required. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.');
+    console.warn('Supabase URL and Anon Key are missing. Supabase features will be disabled.');
+    return null;
   }
 
-  supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
-  return supabaseInstance;
+  try {
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
+    return supabaseInstance;
+  } catch (error) {
+    console.error('Failed to initialize Supabase:', error);
+    return null;
+  }
 };
 
-// Exporting a proxy or a dummy if needed, but using getSupabase() is safer.
-// For compatibility with components already using the default export:
+// Proxy to handle cases where supabase is used directly
 export const supabase = new Proxy({} as SupabaseClient, {
   get: (target, prop) => {
-    return (getSupabase() as any)[prop];
+    const instance = getSupabase();
+    if (!instance) {
+      return () => {
+        console.warn(`Supabase is not initialized. Cannot access ${String(prop)}`);
+        return Promise.reject(new Error('Supabase not initialized'));
+      };
+    }
+    return (instance as any)[prop];
   }
 });
