@@ -1,6 +1,6 @@
 {
   "name": "Focus & Library App",
   "description": "A comprehensive student focus timer integrated with a personal digital library for organizing study materials, tracking reading sessions, and managing daily goals.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

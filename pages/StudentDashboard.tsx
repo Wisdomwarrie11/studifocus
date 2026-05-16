@@ -35,7 +35,7 @@ const StudentDashboard: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto animate-fade-in">
       {/* Announcement Section */}
       {announcements.length > 0 && (
         <div className="mb-8 space-y-2">
@@ -59,25 +59,25 @@ const StudentDashboard: React.FC = () => {
       <div className="mb-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 gap-4 md:gap-0">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Hello, {user.name.split(' ')[0]}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-deep-blue">Hello, {user.name.split(' ')[0]}</h1>
             <p className="text-gray-500 text-sm md:text-base">Ready to crush your goals today?</p>
           </div>
           <Link
             to="/roadmap"
-            className="hidden md:flex items-center text-indigo-600 font-semibold hover:text-indigo-700"
+            className="hidden md:flex items-center text-brand-orange font-semibold hover:text-brand-orange/80"
           >
             View Full Roadmap <ArrowRight size={16} className="ml-1" />
           </Link>
         </div>
     
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
+        <div className="bg-gradient-to-r from-deep-blue to-blue-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden border-b-4 border-brand-orange">
           <div className="relative z-10">
-            <h3 className="text-indigo-200 font-semibold text-xs md:text-sm uppercase tracking-wider mb-1">
+            <h3 className="text-brand-orange font-semibold text-xs md:text-sm uppercase tracking-wider mb-1">
               Your Study Companion 
             </h3>
             <p className="text-lg md:text-2xl font-medium leading-relaxed">"{coachMessage}"</p>
           </div>
-          <div className="absolute right-0 top-0 opacity-10 transform translate-x-10 -translate-y-10">
+          <div className="absolute right-0 top-0 opacity-10 transform translate-x-10 -translate-y-10 text-brand-orange">
             <Flame size={200} />
           </div>
         </div>
@@ -89,32 +89,32 @@ const StudentDashboard: React.FC = () => {
           {/* Stats Row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-              <div className="p-3 bg-orange-100 text-orange-600 rounded-lg">
+              <div className="p-3 bg-orange-100 text-brand-orange rounded-lg">
                 <Flame size={24} />
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase font-bold">Streak</p>
-                <p className="text-xl font-bold text-gray-800">{user.streak} Days</p>
+                <p className="text-xs text-gray-500 uppercase font-bold text-[10px]">Streak</p>
+                <p className="text-xl font-bold text-deep-blue">{user.streak} Days</p>
               </div>
             </div>
             
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-              <div className="p-3 bg-blue-100 text-blue-600 rounded-lg">
+              <div className="p-3 bg-blue-50 text-deep-blue rounded-lg">
                 <Trophy size={24} />
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase font-bold">Points</p>
-                <p className="text-xl font-bold text-gray-800">{user.points}</p>
+                <p className="text-xs text-gray-500 uppercase font-bold text-[10px]">Points</p>
+                <p className="text-xl font-bold text-deep-blue">{user.points}</p>
               </div>
             </div>
 
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-               <div className="p-3 bg-green-100 text-green-600 rounded-lg">
+               <div className="p-3 bg-green-50 text-green-600 rounded-lg">
                 <CheckCircle size={24} />
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase font-bold">Done</p>
-                <p className="text-xl font-bold text-gray-800">{user.completedTopics.length} Topics</p>
+                <p className="text-xs text-gray-500 uppercase font-bold text-[10px]">Done</p>
+                <p className="text-xl font-bold text-deep-blue">{user.completedTopics.length} Topics</p>
               </div>
             </div>
           </div>
@@ -124,12 +124,12 @@ const StudentDashboard: React.FC = () => {
              <h3 className="text-lg font-bold text-gray-700 mb-4">Today's Focus</h3>
              {todaysTopic ? (
                <>
-                <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">{todaysTopic.title}</h2>
+                <h2 className="text-xl md:text-2xl font-bold text-deep-blue mb-2">{todaysTopic.title}</h2>
                 <p className="text-gray-600 mb-6 text-sm md:text-base">{todaysTopic.description}</p>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Link
                     to="/study"
-                    className="flex-1 bg-indigo-600 text-white text-center py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100 flex items-center justify-center space-x-2"
+                    className="flex-1 bg-brand-orange text-white text-center py-3 rounded-xl font-semibold hover:bg-brand-orange/90 transition-colors shadow-lg shadow-brand-orange/20 flex items-center justify-center space-x-2"
                   >
                     <span>Start Deep Work Session</span>
                     <ArrowRight size={18} />
@@ -145,7 +145,7 @@ const StudentDashboard: React.FC = () => {
              ) : (
                <div className="text-center py-8">
                  <p className="text-gray-500">You're all caught up!</p>
-                 <Link to="/roadmap" className="text-indigo-600 font-semibold mt-2 inline-block">Review Roadmap</Link>
+                 <Link to="/roadmap" className="text-brand-orange font-semibold mt-2 inline-block">Review Roadmap</Link>
                </div>
              )}
           </div>
@@ -175,7 +175,7 @@ const StudentDashboard: React.FC = () => {
               value={newGoalText}
               onChange={(e) => setNewGoalText(e.target.value)}
             />
-            <button type="submit" className="text-indigo-600 bg-indigo-50 p-2 rounded-lg hover:bg-indigo-100 transition-colors">
+            <button type="submit" className="text-brand-orange bg-brand-orange/10 p-2 rounded-lg hover:bg-brand-orange/20 transition-colors">
               <Plus size={16} />
             </button>
           </form>
