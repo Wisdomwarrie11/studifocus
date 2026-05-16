@@ -133,44 +133,44 @@ const SoundController: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end">
+    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end">
         {showSoundControls && (
-            <div className="bg-white p-4 rounded-xl shadow-2xl border border-gray-100 mb-4 w-72 animate-fade-in">
-                <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-bold text-gray-700 text-sm flex items-center">
-                      <Music size={14} className="mr-2 text-indigo-500"/> Focus Sounds
+            <div className="bg-white p-6 rounded-3xl shadow-2xl border border-gray-100 mb-4 w-80 animate-fade-in">
+                <div className="flex justify-between items-center mb-5">
+                    <h4 className="font-black text-deep-blue text-sm flex items-center tracking-tight">
+                      <Music size={16} className="mr-2 text-brand-orange"/> Focus Soundscape
                     </h4>
-                    <button onClick={() => setShowSoundControls(false)} className="text-gray-400 hover:text-gray-600"><X size={14}/></button>
+                    <button onClick={() => setShowSoundControls(false)} className="text-gray-400 hover:text-deep-blue p-1 rounded-lg hover:bg-gray-100 transition-all"><X size={18}/></button>
                 </div>
                 
-                <div className="flex bg-gray-100 rounded-lg p-1 mb-4">
+                <div className="flex bg-gray-50 rounded-2xl p-1 mb-5 shadow-inner">
                     <button 
                         onClick={() => setSoundType('white')}
-                        className={`flex-1 text-xs py-1.5 rounded-md font-medium transition-colors ${soundType === 'white' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={`flex-1 text-xs py-2 rounded-xl font-black transition-all ${soundType === 'white' ? 'bg-white text-deep-blue shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
                     >
-                        White
+                        Zen
                     </button>
                     <button 
                         onClick={() => setSoundType('pink')}
-                        className={`flex-1 text-xs py-1.5 rounded-md font-medium transition-colors ${soundType === 'pink' ? 'bg-white text-pink-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={`flex-1 text-xs py-2 rounded-xl font-black transition-all ${soundType === 'pink' ? 'bg-white text-brand-orange shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
                     >
                         Rain
                     </button>
                     <button 
                         onClick={() => setSoundType('custom')}
-                        className={`flex-1 text-xs py-1.5 rounded-md font-medium transition-colors ${soundType === 'custom' ? 'bg-white text-amber-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={`flex-1 text-xs py-2 rounded-xl font-black transition-all ${soundType === 'custom' ? 'bg-white text-amber-500 shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
                     >
-                        Custom
+                        Library
                     </button>
                 </div>
 
                 {soundType === 'custom' && (
-                  <div className="mb-4">
-                    <label className="flex flex-col items-center justify-center w-full p-3 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                  <div className="mb-5">
+                    <label className="flex flex-col items-center justify-center w-full p-4 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:bg-orange-50/20 transition-all group">
                       <div className="flex flex-col items-center justify-center pt-1 pb-1">
-                        <Upload size={20} className="text-gray-400 mb-1" />
+                        <Upload size={24} className="text-gray-300 group-hover:text-brand-orange transition-colors mb-2" />
                         <p className="text-xs text-gray-500 text-center">
-                          {customSoundName ? <span className="text-indigo-600 font-semibold">{customSoundName}</span> : "Upload audio (mp3, wav)"}
+                          {customSoundName ? <span className="text-brand-orange font-black">{customSoundName}</span> : "Select your audio file"}
                         </p>
                       </div>
                       <input type="file" className="hidden" accept="audio/*" onChange={handleCustomSoundUpload} />
@@ -178,8 +178,8 @@ const SoundController: React.FC = () => {
                   </div>
                 )}
 
-                <div className="flex items-center space-x-2 mb-4">
-                    {soundVolume === 0 ? <VolumeX size={16} className="text-gray-400"/> : <Volume2 size={16} className="text-gray-400" />}
+                <div className="flex items-center space-x-3 mb-6">
+                    {soundVolume === 0 ? <VolumeX size={18} className="text-gray-400"/> : <Volume2 size={18} className="text-brand-orange" />}
                     <input 
                         type="range" 
                         min="0" 
@@ -187,27 +187,27 @@ const SoundController: React.FC = () => {
                         step="0.01" 
                         value={soundVolume}
                         onChange={(e) => setSoundVolume(parseFloat(e.target.value))}
-                        className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                        className="w-full h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-brand-orange"
                     />
                 </div>
 
                 <button 
                     onClick={() => setSoundPlaying(!isSoundPlaying)}
-                    className={`w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center transition-all ${
+                    className={`w-full py-4 rounded-2xl font-black text-sm flex items-center justify-center transition-all shadow-lg ${
                       isSoundPlaying 
-                        ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-100' 
-                        : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200'
+                        ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 shadow-red-100' 
+                        : 'bg-brand-orange text-white hover:bg-brand-orange/90 shadow-orange-100'
                     }`}
                 >
-                    {isSoundPlaying ? 'Pause Audio' : 'Play Soundscape'}
+                    {isSoundPlaying ? 'Silence' : 'Start Soundscape'}
                 </button>
             </div>
         )}
         <button 
             onClick={() => setShowSoundControls(!showSoundControls)}
-            className={`p-4 rounded-full shadow-xl transition-all hover:scale-105 active:scale-95 ${isSoundPlaying ? 'bg-indigo-600 text-white animate-pulse ring-4 ring-indigo-100' : 'bg-white text-gray-600 hover:text-indigo-600'}`}
+            className={`p-5 rounded-3xl shadow-2xl transition-all hover:scale-110 active:scale-95 z-50 ${isSoundPlaying ? 'bg-brand-orange text-white animate-pulse ring-8 ring-orange-50' : 'bg-white text-deep-blue hover:shadow-orange-100 border border-gray-50'}`}
         >
-            <Headphones size={24} />
+            <Headphones size={28} />
         </button>
     </div>
   );

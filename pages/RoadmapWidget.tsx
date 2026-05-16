@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flag, Map as MapIcon, Plus, CheckCircle2, ChevronRight, Trophy } from 'lucide-react';
+import { Flag, Map as MapIcon, Plus, CheckCircle2, ChevronRight, Trophy, Trash2, Edit3, X as CloseIcon } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { RoadmapTask, SubGoal } from '../types';
 import confetti from 'canvas-confetti';
 
 const RoadmapWidget: React.FC = () => {
-  const { user, roadmapTasks, addRoadmapTask, updateRoadmapProgress } = useApp();
+  const { 
+    user, 
+    roadmapTasks, 
+    addRoadmapTask, 
+    updateRoadmapProgress, 
+    deleteRoadmapTask, 
+    updateRoadmapTask 
+  } = useApp();
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDesc, setNewTaskDesc] = useState('');
@@ -124,10 +131,31 @@ const RoadmapWidget: React.FC = () => {
         </AnimatePresence>
 
         {roadmapTasks.map((task) => (
-          <div key={task.id} className="space-y-6 relative pb-8 border-b border-gray-100 last:border-0 last:pb-0">
+          <div key={task.id} className="group space-y-6 relative pb-8 border-b border-gray-100 last:border-0 last:pb-0">
             <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-xl font-black text-deep-blue tracking-tight">{task.title}</h3>
+              <div className="flex-1">
+                <div className="flex items-center space-x-3">
+                  <h3 className="text-xl font-black text-deep-blue tracking-tight">{task.title}</h3>
+                  <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => {
+                        const newTitle = prompt('New Title:', task.title);
+                        if (newTitle) updateRoadmapTask(task.id, { title: newTitle });
+                      }}
+                      className="text-gray-400 hover:text-blue-500"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if (window.confirm('Delete this roadmap?')) deleteRoadmapTask(task.id);
+                      }}
+                      className="text-gray-400 hover:text-red-500"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
                 <p className="text-sm text-gray-500">{task.description}</p>
               </div>
               <div className="text-right">
@@ -180,22 +208,41 @@ const RoadmapWidget: React.FC = () => {
             {/* Goal List */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {task.goals.map((goal) => (
-                <button
+                <div
                   key={goal.id}
-                  onClick={() => handleToggleSubGoal(task.id, goal.id)}
-                  disabled={goal.completed}
                   className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
                     goal.completed ? 'bg-gray-50 border-gray-100 text-gray-300' : 'bg-white border-gray-200 text-deep-blue hover:border-brand-orange hover:shadow-md font-bold'
                   }`}
                 >
-                  <div className="flex items-center">
-                    <div className={`mr-3 ${goal.completed ? 'text-green-500' : 'text-gray-300'}`}>
+                  <div className="flex items-center flex-1">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleSubGoal(task.id, goal.id);
+                      }}
+                      disabled={goal.completed}
+                      className={`mr-3 ${goal.completed ? 'text-green-500' : 'text-gray-300'}`}
+                    >
                       <CheckCircle2 size={18} />
-                    </div>
+                    </button>
                     <span className="text-sm font-bold">{goal.text}</span>
                   </div>
-                  {!goal.completed && <ChevronRight size={16} className="text-brand-orange" />}
-                </button>
+                  <div className="flex items-center space-x-2">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if(window.confirm('Delete this goal?')) {
+                          const updatedGoals = task.goals.filter(g => g.id !== goal.id);
+                          updateRoadmapTask(task.id, { goals: updatedGoals });
+                        }
+                      }}
+                      className="text-gray-300 hover:text-red-500 p-1"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                    {!goal.completed && <ChevronRight size={16} className="text-brand-orange" />}
+                  </div>
+                </div>
               ))}
             </div>
           </div>

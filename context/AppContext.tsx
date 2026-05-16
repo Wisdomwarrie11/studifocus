@@ -109,12 +109,15 @@ interface AppContextType {
   // Roadmap Methods
   addRoadmapTask: (title: string, description: string, goals: string[]) => void;
   updateRoadmapProgress: (taskId: string, goalId: string) => void;
+  deleteRoadmapTask: (taskId: string) => void;
+  updateRoadmapTask: (taskId: string, updates: Partial<RoadmapTask>) => void;
 
   // Library Methods
   addLibraryItem: (item: Omit<LibraryItem, 'id' | 'userId' | 'createdAt' | 'userNotes'>) => void;
   updateLibraryItemNote: (id: string, note: string) => void;
   addReadingLog: (itemId: string, itemTitle: string, durationSeconds: number) => void;
   deleteLibraryItem: (id: string) => void;
+  saveStorageFeedback: (willingToPay: boolean) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -345,7 +348,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const task = roadmapTasks.find(t => t.id === taskId);
     if (!task) return;
 
-    const updatedGoals = task.goals.map(g => g.id === goalId ? { ...g, completed: true } : g);
+    const updatedGoals = task.goals.map(g => g.id === goalId ? { ...g, completed: !g.completed } : g);
     const completedCount = updatedGoals.filter(g => g.completed).length;
     const newPos = (completedCount / updatedGoals.length) * 100;
 
@@ -355,12 +358,43 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             avatarPosition: newPos 
         });
         
-        const newPoints = user.points + 50;
-        await updateDoc(doc(db, 'users', user.id), { points: newPoints });
-        setUser({ ...user, points: newPoints });
-        addActivity('roadmap_progress', { taskId, title: task.title, goalId, progress: newPos });
+        if (updatedGoals.find(g => g.id === goalId)?.completed) {
+          const newPoints = user.points + 50;
+          await updateDoc(doc(db, 'users', user.id), { points: newPoints });
+          setUser({ ...user, points: newPoints });
+          addActivity('roadmap_progress', { taskId, title: task.title, goalId, progress: newPos });
+        }
     } catch (err) {
         handleFirestoreError(err, OperationType.UPDATE, `roadmapTasks/${taskId}`);
+    }
+  };
+
+  const deleteRoadmapTask = async (taskId: string) => {
+    try {
+      await deleteDoc(doc(db, 'roadmapTasks', taskId));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `roadmapTasks/${taskId}`);
+    }
+  };
+
+  const updateRoadmapTask = async (taskId: string, updates: Partial<RoadmapTask>) => {
+    try {
+      await updateDoc(doc(db, 'roadmapTasks', taskId), updates);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `roadmapTasks/${taskId}`);
+    }
+  };
+
+  const saveStorageFeedback = async (willingToPay: boolean) => {
+    if (!user) return;
+    try {
+      await addDoc(collection(db, 'storageFeedback'), {
+        userId: user.id,
+        willingToPay,
+        timestamp: serverTimestamp()
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, 'storageFeedback');
     }
   };
 
@@ -379,8 +413,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addPoints(2);
   };
 
-  const submitDailyNote = (note: string) => {
-    addPoints(10);
+  const submitDailyNote = async (note: string) => {
+    if (!user) return;
+    try {
+      await addDoc(collection(db, 'journals'), {
+        userId: user.id,
+        content: note,
+        date: new Date().toISOString(),
+        timestamp: serverTimestamp()
+      });
+      addPoints(10);
+      addActivity('journal_entry', { preview: note.substring(0, 50) });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, 'journals');
+    }
   };
 
   const addTopic = (weekId: string, topic: any) => {
@@ -490,8 +536,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addAnnouncementts: addAnnouncement,
       addRoadmapTask,
       updateRoadmapProgress,
+      deleteRoadmapTask,
+      updateRoadmapTask,
       addLibraryItem,
       updateLibraryItemNote,
+      saveStorageFeedback,
       addReadingLog,
       deleteLibraryItem
     }}>

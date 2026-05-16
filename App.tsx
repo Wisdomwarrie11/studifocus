@@ -32,6 +32,7 @@ const ProtectedLayout: React.FC = () => {
   }
 
   return (
+   
     <div className="bg-navy-900">
       <Sidebar />
       {/* 

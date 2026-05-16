@@ -5,8 +5,8 @@ let supabaseInstance: SupabaseClient | null = null;
 export const getSupabase = (): SupabaseClient | null => {
   if (supabaseInstance) return supabaseInstance;
 
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const supabaseUrl = "https://strogenqruolpqdbitob.supabase.co";
+  const supabaseAnonKey = "sb_publishable_ohMiJ8dJjT3OuI8HUw09Sw_Srm7VSPS";
 
   if (!supabaseUrl || !supabaseAnonKey) {
     console.warn('Supabase URL and Anon Key are missing. Supabase features will be disabled.');

@@ -88,7 +88,7 @@ export interface RoadmapTask {
 export interface Activity {
   id: string;
   userId: string;
-  type: 'focus' | 'reading' | 'goal_completion' | 'roadmap_progress';
+  type: 'focus' | 'reading' | 'goal_completion' | 'roadmap_progress' | 'journal_entry';
   duration?: number;
   metadata?: any;
   timestamp: string;

@@ -145,9 +145,9 @@ const FocusTimer: React.FC = () => {
     }
   };
 
-  const handleSaveNote = () => {
+  const handleSaveNote = async () => {
     if (dailyNote.trim()) {
-      submitDailyNote(dailyNote);
+      await submitDailyNote(dailyNote);
       setNoteSaved(true);
       setTimeout(() => setNoteSaved(false), 3000);
       setDailyNote('');
@@ -177,44 +177,20 @@ const FocusTimer: React.FC = () => {
     e.preventDefault();
     if (!newItemTitle || !newItemCategory) return;
 
-    let finalContent = newItemContent;
-
-    if (newItemType === 'pdf') {
-        if (!uploadFile) {
-            alert("Please select a file to upload");
-            return;
-        }
-        setIsUploading(true);
-        try {
-            const fileExt = uploadFile.name.split('.').pop();
-            const fileName = `${Math.random()}.${fileExt}`;
-            const filePath = `${user?.id || 'anonymous'}/${fileName}`;
-
-            const { data, error } = await supabase.storage
-                .from('library')
-                .upload(filePath, uploadFile);
-
-            if (error) throw error;
-
-            const { data: { publicUrl } } = supabase.storage
-                .from('library')
-                .getPublicUrl(filePath);
-            
-            finalContent = publicUrl;
-        } catch (error: any) {
-            console.error("Upload error:", error);
-            alert(`Upload failed: ${error.message || 'Unknown error'}`);
-            setIsUploading(false);
-            return;
-        }
-        setIsUploading(false);
+    // Fixed: Using URLs or Text since Supabase storage was failing/unwanted
+    // If the user wants actual file storage, they can specify it later.
+    // For now, we allow them to provide a URL for 'pdf' items if they choose.
+    
+    if (newItemType === 'pdf' && !newItemContent.startsWith('http')) {
+        alert("For PDF/Files, please provide a valid direct link for now.");
+        return;
     }
 
     addLibraryItem({
         title: newItemTitle,
         category: newItemCategory,
         type: newItemType,
-        content: finalContent
+        content: newItemContent
     });
     
     setIsAddingMaterial(false);
@@ -277,7 +253,7 @@ const FocusTimer: React.FC = () => {
         <div>
           <h1 className="text-3xl font-black text-deep-blue mb-2 tracking-tight">Virtual Study Room</h1>
           <div className="flex items-center space-x-4">
-            <p className="text-gray-500">Welcome back, <span className="text-orange-600 font-bold font-mono">{user.name}</span></p>
+            <p className="text-gray-500">Welcome back, <span className="text-brand-orange font-bold font-mono">{user.name}</span></p>
             <button onClick={logout} className="text-[10px] uppercase tracking-widest font-black text-gray-400 hover:text-red-500 transition-colors">Logout</button>
           </div>
         </div>
@@ -333,7 +309,7 @@ const FocusTimer: React.FC = () => {
                 </button>
               </div>
               <p className="mt-6 text-gray-400 text-sm flex items-center">
-                <Zap size={14} className="mr-1 text-orange-500" /> Earn 2 pts per completed session
+                <Zap size={14} className="mr-1 text-brand-orange" /> Earn 2 pts per completed session
               </p>
             </div>
 
@@ -344,7 +320,7 @@ const FocusTimer: React.FC = () => {
               </div>
               <div className="relative z-10">
                 <div className="flex items-center space-x-2 mb-4">
-                  <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-brand-orange rounded-lg flex items-center justify-center">
                     <Brain size={18} />
                   </div>
                   <h3 className="font-bold tracking-tight">AI Study Coach</h3>
@@ -355,7 +331,7 @@ const FocusTimer: React.FC = () => {
                 <button 
                   onClick={handleRefreshCoach}
                   disabled={isAnalyzing}
-                  className="text-xs font-bold uppercase tracking-widest text-orange-500 hover:text-white transition-colors flex items-center"
+                  className="text-xs font-bold uppercase tracking-widest text-brand-orange hover:text-white transition-colors flex items-center"
                 >
                   <MessageSquare size={14} className="mr-2" /> {isAnalyzing ? 'Analyzing...' : 'Refresh Advice'}
                 </button>
@@ -365,7 +341,7 @@ const FocusTimer: React.FC = () => {
             {/* Daily Note */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h3 className="font-bold text-blue-900 mb-4 flex items-center">
-                <PenTool className="mr-2 text-orange-500" size={20} /> What did you learn today?
+                <PenTool className="mr-2 text-brand-orange" size={20} /> What did you learn today?
               </h3>
               <textarea
                 className="w-full p-4 border border-gray-100 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brand-orange outline-none resize-none h-32 transition-all"
@@ -374,7 +350,7 @@ const FocusTimer: React.FC = () => {
                 onChange={(e) => setDailyNote(e.target.value)}
               />
               <div className="flex justify-end mt-3">
-                <button onClick={handleSaveNote} className="flex items-center bg-orange-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-orange-700 transition-all shadow-lg active:scale-95">
+                <button onClick={handleSaveNote} className="flex items-center bg-brand-orange text-white px-5 py-2.5 rounded-xl font-bold hover:bg-brand-orange/90 transition-all shadow-lg active:scale-95">
                   <Save size={16} className="mr-2" /> {noteSaved ? 'Saved!' : 'Submit to Journal'}
                 </button>
               </div>
@@ -401,7 +377,7 @@ const FocusTimer: React.FC = () => {
 
               <form onSubmit={handleAddGoal} className="flex items-center space-x-2 border-t border-gray-100 pt-4">
                 <input type="text" placeholder="Add goal..." className="flex-1 text-sm border-none outline-none bg-transparent" value={newGoalText} onChange={(e) => setNewGoalText(e.target.value)} />
-                <button type="submit" className="text-orange-600 bg-orange-50 p-2 rounded-lg hover:bg-orange-100 transition-colors">
+                <button type="submit" className="text-brand-orange bg-orange-50 p-2 rounded-lg hover:bg-orange-100 transition-colors">
                   <Plus size={16} />
                 </button>
               </form>
@@ -410,7 +386,7 @@ const FocusTimer: React.FC = () => {
             {/* Flashcards */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h3 className="text-lg font-bold text-blue-900 mb-4 flex items-center">
-                <Bell className="mr-2 text-orange-500" size={20} /> Flashcard Reminders
+                <Bell className="mr-2 text-brand-orange" size={20} /> Flashcard Reminders
               </h3>
 
               <div className="space-y-4 mb-6 max-h-48 overflow-y-auto">
@@ -447,7 +423,7 @@ const FocusTimer: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <button 
                 onClick={() => setIsAddingMaterial(!isAddingMaterial)}
-                className="w-full flex items-center justify-center bg-orange-600 text-white py-3 rounded-xl font-bold hover:bg-orange-700 transition-all mb-6 shadow-orange-100 shadow-lg"
+                className="w-full flex items-center justify-center bg-brand-orange text-white py-3 rounded-xl font-bold hover:bg-brand-orange/90 transition-all mb-6 shadow-orange-100 shadow-lg"
               >
                 <Plus size={18} className="mr-2" /> Add Material
               </button>
@@ -472,7 +448,7 @@ const FocusTimer: React.FC = () => {
             {/* Reading Stats */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h3 className="text-sm font-bold text-blue-900 flex items-center mb-4">
-                <BarChart2 size={16} className="mr-2 text-orange-500" /> Recent Sessions
+                <BarChart2 size={16} className="mr-2 text-brand-orange" /> Recent Sessions
               </h3>
               <div className="space-y-4">
                 {readingLogs.slice(0, 5).map(log => (
@@ -535,20 +511,16 @@ const FocusTimer: React.FC = () => {
                   </div>
                   
                   {newItemType === 'pdf' ? (
-                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:bg-gray-50 transition-colors relative">
+                    <div className="space-y-4">
                         <input 
-                            type="file" 
-                            accept=".pdf,.doc,.docx" 
-                            onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            type="text" 
+                            placeholder="Direct URL to PDF or Document" 
+                            className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none"
+                            value={newItemContent}
+                            onChange={e => setNewItemContent(e.target.value)}
+                            required
                         />
-                        <div className="flex flex-col items-center">
-                            <Plus className="text-gray-300 mb-2" size={32} />
-                            <p className="text-sm text-gray-500 font-medium">
-                                {uploadFile ? uploadFile.name : "Click or drag to upload study material"}
-                            </p>
-                            <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest">PDF or Word Documents</p>
-                        </div>
+                        <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest text-center">Paste a link to your study material</p>
                     </div>
                   ) : (
                     <textarea 
@@ -564,7 +536,7 @@ const FocusTimer: React.FC = () => {
                     <button 
                         type="submit" 
                         disabled={isUploading}
-                        className="bg-orange-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-orange-700 transition-colors disabled:opacity-50"
+                        className="bg-brand-orange text-white px-6 py-2 rounded-xl font-bold hover:bg-brand-orange/90 transition-colors disabled:opacity-50"
                     >
                       {isUploading ? 'Uploading...' : 'Save to Library'}
                     </button>
@@ -589,7 +561,7 @@ const FocusTimer: React.FC = () => {
                       </button>
                     </div>
                     <div className="flex items-start justify-between mb-4">
-                      <span className="inline-block px-2 py-1 bg-orange-50 text-orange-600 text-xs font-bold rounded uppercase tracking-wide">
+                      <span className="inline-block px-2 py-1 bg-orange-50 text-brand-orange text-xs font-bold rounded uppercase tracking-wide">
                         {item.category}
                       </span>
                     </div>
@@ -636,7 +608,7 @@ const FocusTimer: React.FC = () => {
             </div>
 
             <div className="flex items-center space-x-6 bg-gray-50 px-6 py-3 rounded-2xl border border-gray-200 shadow-inner">
-              <div className={`text-2xl font-mono font-black ${isReading ? 'text-orange-600' : 'text-gray-400'}`}>
+              <div className={`text-2xl font-mono font-black ${isReading ? 'text-brand-orange' : 'text-gray-400'}`}>
                 {formatTime(readingSeconds)}
               </div>
               <div className="h-8 w-px bg-gray-300"></div>
@@ -688,7 +660,7 @@ const FocusTimer: React.FC = () => {
              <div className="w-full lg:w-96 bg-white border-l border-gray-200 flex flex-col h-1/2 lg:h-full shadow-2xl z-10">
                <div className="p-4 border-b border-gray-100 bg-gray-50">
                  <h3 className="font-bold text-blue-950 flex items-center">
-                   <PenTool size={16} className="mr-2 text-orange-500" /> Study Notes
+                   <PenTool size={16} className="mr-2 text-brand-orange" /> Study Notes
                  </h3>
                </div>
                <textarea 
