@@ -12,7 +12,8 @@ import {
   SubGoal,
   Community,
   FlashCard,
-  Announcement
+  Announcement,
+  JournalEntry
 } from '../types';
 import { 
   getAuth, 
@@ -72,9 +73,6 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   throw new Error(JSON.stringify(errInfo));
 }
 
-// Mock implementation of auth for the purpose of this code generation if firebase file is missing in context
-// In a real scenario, this relies on the firebase.ts file existing.
-
 interface AppContextType {
   user: User | null;
   loading: boolean;
@@ -92,6 +90,7 @@ interface AppContextType {
   readingLogs: ReadingLog[];
   roadmapTasks: RoadmapTask[];
   activities: Activity[];
+  journals: JournalEntry[];
   addGoal: (text: string) => void;
   toggleGoal: (id: string) => void;
   addActivity: (type: Activity['type'], metadata?: any, duration?: number) => void;
@@ -139,6 +138,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [readingLogs, setReadingLogs] = useState<ReadingLog[]>([]);
   const [roadmapTasks, setRoadmapTasks] = useState<RoadmapTask[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [journals, setJournals] = useState<JournalEntry[]>([]);
 
   // --- Auth & Data Listener ---
   useEffect(() => {
@@ -211,6 +211,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           );
           activeUnsubs.push(unsubActivities);
 
+          const qJournals = query(collection(db, 'journals'), where('userId', '==', firebaseUser.uid), orderBy('timestamp', 'desc'));
+          const unsubJournals = onSnapshot(qJournals, 
+            (snap) => setJournals(snap.docs.map(d => ({ id: d.id, ...d.data() } as JournalEntry))), 
+            (err) => handleFirestoreError(err, OperationType.LIST, 'journals')
+          );
+          activeUnsubs.push(unsubJournals);
+
         } catch (error) {
           console.error("Error initializing user data:", error);
         } finally {
@@ -219,12 +226,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       } else {
         setUser(null);
         setLoading(false);
-        // Clear data when logged out
         setDailyGoals([]);
         setLibraryItems([]);
         setRoadmapTasks([]);
         setReadingLogs([]);
         setActivities([]);
+        setJournals([]);
       }
     });
 
@@ -507,7 +514,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     <AppContext.Provider value={{
       user,
       setUser,
-      loading, // Added loading state
+      loading,
       login,
       register,
       logout,
@@ -521,6 +528,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       readingLogs,
       roadmapTasks,
       activities,
+      journals,
       addGoal,
       toggleGoal,
       addActivity,

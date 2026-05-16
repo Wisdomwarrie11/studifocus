@@ -108,6 +108,14 @@ export interface DailyNote {
   date: string;
 }
 
+export interface JournalEntry {
+  id: string;
+  userId: string;
+  content: string;
+  date: string;
+  timestamp: any;
+}
+
 export interface FlashCard {
   id: string;
   userId: string;
