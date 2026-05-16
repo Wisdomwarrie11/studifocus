@@ -1,28 +1,25 @@
-// Login.tsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { Brain, Zap } from 'lucide-react';
 
 const Login: React.FC = () => {
-  const { login } = useApp(); // use context login function
+  const { login } = useApp();
   const navigate = useNavigate();
   const [isStudent, setIsStudent] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    const form = e.currentTarget as HTMLFormElement;
-    const email = (form.elements[0] as HTMLInputElement).value;
-    const password = (form.elements[1] as HTMLInputElement).value;
-
     try {
-      // Call context login (handles saving user in context + localStorage)
       await login(email, password);
-      navigate('/dashboard');
+      navigate('/');
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Login failed. Please try again.');
@@ -32,81 +29,67 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100">
-      <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-[#001b3d] p-6">
+      <div className="bg-white/5 backdrop-blur-2xl p-8 rounded-[2.5rem] border border-white/10 shadow-2xl w-full max-w-md">
 
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary rounded-xl mx-auto flex items-center justify-center text-white text-2xl font-bold mb-4">
-            SF
+        <div className="text-center mb-10">
+          <div className="w-20 h-20 bg-white/10 rounded-3xl mx-auto flex items-center justify-center text-white mb-6 border border-white/5 shadow-2xl">
+            <Brain size={40} className="text-orange-500" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-800">Welcome to StudiFocus</h1>
-          <p className="text-gray-500 mt-2">Accountability starts here.</p>
+          <h1 className="text-3xl font-black text-white tracking-tight">StudiFocus</h1>
+          <p className="text-white/40 mt-2 text-sm uppercase tracking-widest font-bold">Accountability Starts Here</p>
         </div>
 
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-
-        <div className="flex bg-gray-100 p-1 rounded-lg mb-6">
-          <button
-            type="button"
-            className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${
-              isStudent ? 'bg-white shadow text-primary' : 'text-gray-500 hover:text-gray-700'
-            }`}
-            onClick={() => setIsStudent(true)}
-          >
-            Student
-          </button>
-
-          <button
-            type="button"
-            className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${
-              !isStudent ? 'bg-white shadow text-primary' : 'text-gray-500 hover:text-gray-700'
-            }`}
-            onClick={() => navigate('/adminlogin')}
-          >
-            Admin
-          </button>
-        </div>
-
-        {isStudent && (
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-              <input
-                type="email"
-                placeholder="you@example.com"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                required
-              />
+        {error && (
+            <div className="bg-red-500/20 border border-red-500/50 text-red-100 text-xs p-4 rounded-2xl mb-6 text-center animate-shake">
+                {error}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <input
-                type="password"
-                placeholder="Enter your password"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
-            >
-              {loading ? 'Logging in...' : 'Start Learning'}
-            </button>
-          </form>
         )}
 
-        <div className="mt-6 text-center text-xs text-gray-400">
-          <p>
-            Don't have an account?{' '}
-            <span
-              className="text-primary font-medium cursor-pointer"
-              onClick={() => navigate('/register')}
-            >
-              Register here
-            </span>
-          </p>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div className="group">
+            <input
+              type="email"
+              placeholder="Username / Email"
+              className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-orange-500/50 transition-all text-white text-sm placeholder:text-white/20"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="group">
+            <input
+              type="password"
+              placeholder="Password"
+              className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-orange-500/50 transition-all text-white text-sm placeholder:text-white/20"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-orange-600 text-white py-4 rounded-2xl font-black text-lg hover:bg-orange-500 active:scale-95 transition-all shadow-xl shadow-orange-900/40 disabled:opacity-50 flex items-center justify-center space-x-2"
+          >
+            {loading ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+            ) : (
+                <>
+                  <Zap size={20} className="fill-white" />
+                  <span>Start Learning</span>
+                </>
+            )}
+          </button>
+        </form>
+
+        <div className="mt-8 pt-8 border-t border-white/5 text-center">
+            <p className="text-white/40 text-xs font-bold uppercase tracking-widest">
+                Don't have an account?{' '}
+                <Link to="/register" className="text-orange-500 hover:text-orange-400">
+                    Register Here
+                </Link>
+            </p>
         </div>
 
       </div>

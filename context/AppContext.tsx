@@ -18,8 +18,9 @@ import {
   getAuth, 
   onAuthStateChanged, 
   signOut, 
-  signInWithPopup, 
-  GoogleAuthProvider,
+  signInAnonymously,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   User as FirebaseUser
 } from 'firebase/auth';
 import { 
@@ -78,7 +79,7 @@ interface AppContextType {
   user: User | null;
   loading: boolean;
   setUser: (user: User | null) => void;
-  login: () => Promise<void>;
+  login: (email?: string, password?: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   weeks: CourseWeek[];
@@ -138,70 +139,128 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // --- Auth & Data Listener ---
   useEffect(() => {
+    let activeUnsubs: (() => void)[] = [];
+
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      // Clean up any existing listeners first
+      activeUnsubs.forEach(u => u());
+      activeUnsubs = [];
+
       if (firebaseUser) {
-        // Fetch or create user profile
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        
-        let userData: User;
-        if (!userDoc.exists()) {
-          userData = {
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName || 'Student',
-            email: firebaseUser.email || '',
-            role: UserRole.STUDENT,
-            streak: 1,
-            points: 0,
-            badges: [],
-            completedTopics: [],
-            assessmentScores: {}
-          };
-          await setDoc(userDocRef, userData);
-        } else {
-          userData = userDoc.data() as User;
+        setLoading(true);
+        try {
+          // Fetch or create user profile
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          const userDoc = await getDoc(userDocRef);
+          
+          let userData: User;
+          if (!userDoc.exists()) {
+            userData = {
+              id: firebaseUser.uid,
+              name: firebaseUser.displayName || 'Student',
+              email: firebaseUser.email || '',
+              role: UserRole.STUDENT,
+              streak: 1,
+              points: 0,
+              badges: [],
+              completedTopics: [],
+              assessmentScores: {}
+            };
+            await setDoc(userDocRef, userData);
+          } else {
+            userData = userDoc.data() as User;
+          }
+          setUser(userData);
+
+          // Set up real-time listeners for all user data
+          const qGoals = query(collection(db, 'goals'), where('userId', '==', firebaseUser.uid));
+          const unsubGoals = onSnapshot(qGoals, 
+            (snap) => setDailyGoals(snap.docs.map(d => ({ id: d.id, ...d.data() } as DailyGoal))), 
+            (err) => handleFirestoreError(err, OperationType.LIST, 'goals')
+          );
+          activeUnsubs.push(unsubGoals);
+
+          const qLibrary = query(collection(db, 'libraryItems'), where('userId', '==', firebaseUser.uid));
+          const unsubLibrary = onSnapshot(qLibrary, 
+            (snap) => setLibraryItems(snap.docs.map(d => ({ id: d.id, ...d.data() } as LibraryItem))), 
+            (err) => handleFirestoreError(err, OperationType.LIST, 'libraryItems')
+          );
+          activeUnsubs.push(unsubLibrary);
+
+          const qRoadmap = query(collection(db, 'roadmapTasks'), where('userId', '==', firebaseUser.uid));
+          const unsubRoadmap = onSnapshot(qRoadmap, 
+            (snap) => setRoadmapTasks(snap.docs.map(d => ({ id: d.id, ...d.data() } as RoadmapTask))), 
+            (err) => handleFirestoreError(err, OperationType.LIST, 'roadmapTasks')
+          );
+          activeUnsubs.push(unsubRoadmap);
+
+          const qLogs = query(collection(db, 'readingLogs'), where('userId', '==', firebaseUser.uid), orderBy('date', 'desc'), limit(10));
+          const unsubLogs = onSnapshot(qLogs, 
+            (snap) => setReadingLogs(snap.docs.map(d => ({ id: d.id, ...d.data() } as ReadingLog))), 
+            (err) => handleFirestoreError(err, OperationType.LIST, 'readingLogs')
+          );
+          activeUnsubs.push(unsubLogs);
+
+          const qActivities = query(collection(db, 'activities'), where('userId', '==', firebaseUser.uid), orderBy('timestamp', 'desc'), limit(20));
+          const unsubActivities = onSnapshot(qActivities, 
+            (snap) => setActivities(snap.docs.map(d => ({ id: d.id, ...d.data() } as Activity))), 
+            (err) => handleFirestoreError(err, OperationType.LIST, 'activities')
+          );
+          activeUnsubs.push(unsubActivities);
+
+        } catch (error) {
+          console.error("Error initializing user data:", error);
+        } finally {
+          setLoading(false);
         }
-        setUser(userData);
-
-        // Set up real-time listeners for all user data
-        const qGoals = query(collection(db, 'goals'), where('userId', '==', firebaseUser.uid));
-        const unsubGoals = onSnapshot(qGoals, (snap) => setDailyGoals(snap.docs.map(d => ({ id: d.id, ...d.data() } as DailyGoal))), (err) => handleFirestoreError(err, OperationType.LIST, 'goals'));
-
-        const qLibrary = query(collection(db, 'libraryItems'), where('userId', '==', firebaseUser.uid));
-        const unsubLibrary = onSnapshot(qLibrary, (snap) => setLibraryItems(snap.docs.map(d => ({ id: d.id, ...d.data() } as LibraryItem))), (err) => handleFirestoreError(err, OperationType.LIST, 'libraryItems'));
-
-        const qRoadmap = query(collection(db, 'roadmapTasks'), where('userId', '==', firebaseUser.uid));
-        const unsubRoadmap = onSnapshot(qRoadmap, (snap) => setRoadmapTasks(snap.docs.map(d => ({ id: d.id, ...d.data() } as RoadmapTask))), (err) => handleFirestoreError(err, OperationType.LIST, 'roadmapTasks'));
-
-        const qLogs = query(collection(db, 'readingLogs'), where('userId', '==', firebaseUser.uid), orderBy('date', 'desc'), limit(10));
-        const unsubLogs = onSnapshot(qLogs, (snap) => setReadingLogs(snap.docs.map(d => ({ id: d.id, ...d.data() } as ReadingLog))), (err) => handleFirestoreError(err, OperationType.LIST, 'readingLogs'));
-
-        const qActivities = query(collection(db, 'activities'), where('userId', '==', firebaseUser.uid), orderBy('timestamp', 'desc'), limit(20));
-        const unsubActivities = onSnapshot(qActivities, (snap) => setActivities(snap.docs.map(d => ({ id: d.id, ...d.data() } as Activity))), (err) => handleFirestoreError(err, OperationType.LIST, 'activities'));
-
-        setLoading(false);
-        return () => {
-          unsubGoals();
-          unsubLibrary();
-          unsubRoadmap();
-          unsubLogs();
-          unsubActivities();
-        };
       } else {
         setUser(null);
         setLoading(false);
+        // Clear data when logged out
+        setDailyGoals([]);
+        setLibraryItems([]);
+        setRoadmapTasks([]);
+        setReadingLogs([]);
+        setActivities([]);
       }
     });
 
-    return () => unsubscribeAuth();
+    return () => {
+      unsubscribeAuth();
+      activeUnsubs.forEach(u => u());
+    };
   }, []);
 
-  const login = async () => {
+  const login = async (email?: string, password?: string) => {
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      if (!email || !password) throw new Error("Email and password are required");
+      await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
       console.error("Login Error", error);
+      throw error;
+    }
+  };
+
+  const register = async (name: string, email: string, password: string) => {
+    try {
+      const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password);
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userData: User = {
+        id: firebaseUser.uid,
+        name,
+        email,
+        role: UserRole.STUDENT,
+        streak: 1,
+        points: 0,
+        badges: [],
+        completedTopics: [],
+        assessmentScores: {}
+      };
+      await setDoc(userDocRef, userData);
+      setUser(userData);
+    } catch (error) {
+      console.error("Register Error", error);
+      throw error;
     }
   };
 
@@ -404,7 +463,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setUser,
       loading, // Added loading state
       login,
-      register: async () => {}, // Register handled by Google login
+      register,
       logout,
       weeks,
       assessments,

@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Play, Pause, RotateCcw, CheckSquare, PenTool, Zap, Plus, Save, Bell, 
   BookOpen, Clock, LayoutGrid, Library, X, ExternalLink, Trash2, StopCircle, 
-  ChevronRight, BarChart2, Brain
+  ChevronRight, BarChart2, Brain, Sparkles, MessageSquare
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { LibraryItem } from '../types';
 import RoadmapWidget from '../pages/RoadmapWidget';
 import AnalyticsDashboard from '../pages/AnalyticsDashboard';
 import { supabase } from '../src/supabase';
+import { getMotivationalCoach, analyzeProgress } from '../services/geminiService';
 
 const FocusTimer: React.FC = () => {
   const { 
@@ -64,6 +65,25 @@ const FocusTimer: React.FC = () => {
   const [readingSeconds, setReadingSeconds] = useState(0);
   const [isReading, setIsReading] = useState(false);
   const readingIntervalRef = useRef<number | null>(null);
+
+  // AI Coach state
+  const [coachMessage, setCoachMessage] = useState<string>('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  useEffect(() => {
+    if (user && activeTab === 'focus' && !coachMessage) {
+      getMotivationalCoach(user.name, user.streak, user.points, "Starting a study session")
+        .then(setCoachMessage);
+    }
+  }, [user, activeTab]);
+
+  const handleRefreshCoach = async () => {
+    if (!user) return;
+    setIsAnalyzing(true);
+    const msg = await getMotivationalCoach(user.name, user.streak, user.points, "Middle of the day checkup");
+    setCoachMessage(msg);
+    setIsAnalyzing(false);
+  };
 
   // New Item Form
   const [newItemTitle, setNewItemTitle] = useState('');
@@ -247,46 +267,7 @@ const FocusTimer: React.FC = () => {
   // ------------------------------------------
   // RENDER
   // ------------------------------------------
-  if (loading) {
-    return (
-        <div className="min-h-screen bg-transparent flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-        </div>
-    );
-  }
-
-  if (!user) {
-    return (
-        <div className="min-h-screen bg-deep-blue flex flex-col items-center justify-center p-6 text-white text-center">
-            <div className="bg-white/10 p-6 rounded-full mb-8 backdrop-blur-xl animate-bounce">
-                <Brain size={80} className="text-brand-orange" />
-            </div>
-            <h1 className="text-4xl font-black mb-4 tracking-tight">Student Focus</h1>
-            <p className="text-white/80 max-w-sm mb-12 text-lg">Your personalized gamified journey to academic mastery, now synced across devices.</p>
-            
-            <button 
-                onClick={login}
-                className="bg-brand-orange text-white px-10 py-5 rounded-3xl font-black text-xl shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center space-x-3 group"
-            >
-                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center group-hover:rotate-12 transition-transform">
-                    <Zap size={20} className="text-white" />
-                </div>
-                <span>Start Your Journey</span>
-            </button>
-            
-            <div className="mt-12 flex items-center space-x-6 text-white/40">
-                <div className="flex flex-col items-center">
-                    <CheckSquare size={20} />
-                    <span className="text-[10px] font-bold uppercase mt-1 tracking-widest">Roadmaps</span>
-                </div>
-                <div className="flex flex-col items-center">
-                    <BarChart2 size={20} />
-                    <span className="text-[10px] font-bold uppercase mt-1 tracking-widest">Analytics</span>
-                </div>
-            </div>
-        </div>
-    );
-  }
+  if (!user) return null; // Safe guard, though router handles this
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto min-h-screen bg-white">
@@ -296,7 +277,7 @@ const FocusTimer: React.FC = () => {
         <div>
           <h1 className="text-3xl font-black text-deep-blue mb-2 tracking-tight">Virtual Study Room</h1>
           <div className="flex items-center space-x-4">
-            <p className="text-gray-500">Welcome back, <span className="text-brand-orange font-bold font-mono">{user.name}</span></p>
+            <p className="text-gray-500">Welcome back, <span className="text-orange-600 font-bold font-mono">{user.name}</span></p>
             <button onClick={logout} className="text-[10px] uppercase tracking-widest font-black text-gray-400 hover:text-red-500 transition-colors">Logout</button>
           </div>
         </div>
@@ -352,14 +333,39 @@ const FocusTimer: React.FC = () => {
                 </button>
               </div>
               <p className="mt-6 text-gray-400 text-sm flex items-center">
-                <Zap size={14} className="mr-1 text-brand-orange" /> Earn 2 pts per completed session
+                <Zap size={14} className="mr-1 text-orange-500" /> Earn 2 pts per completed session
               </p>
+            </div>
+
+            {/* AI Coach Card */}
+            <div className="bg-gradient-to-br from-deep-blue to-blue-900 rounded-3xl shadow-xl p-6 text-white overflow-hidden relative group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Sparkles size={120} />
+              </div>
+              <div className="relative z-10">
+                <div className="flex items-center space-x-2 mb-4">
+                  <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                    <Brain size={18} />
+                  </div>
+                  <h3 className="font-bold tracking-tight">AI Study Coach</h3>
+                </div>
+                <p className="text-lg font-medium mb-4 italic leading-relaxed">
+                  "{coachMessage || 'Calculating your next move...'}"
+                </p>
+                <button 
+                  onClick={handleRefreshCoach}
+                  disabled={isAnalyzing}
+                  className="text-xs font-bold uppercase tracking-widest text-orange-500 hover:text-white transition-colors flex items-center"
+                >
+                  <MessageSquare size={14} className="mr-2" /> {isAnalyzing ? 'Analyzing...' : 'Refresh Advice'}
+                </button>
+              </div>
             </div>
 
             {/* Daily Note */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h3 className="font-bold text-deep-blue mb-4 flex items-center">
-                <PenTool className="mr-2 text-brand-orange" size={20} /> What did you learn today?
+              <h3 className="font-bold text-blue-900 mb-4 flex items-center">
+                <PenTool className="mr-2 text-orange-500" size={20} /> What did you learn today?
               </h3>
               <textarea
                 className="w-full p-4 border border-gray-100 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brand-orange outline-none resize-none h-32 transition-all"
@@ -368,7 +374,7 @@ const FocusTimer: React.FC = () => {
                 onChange={(e) => setDailyNote(e.target.value)}
               />
               <div className="flex justify-end mt-3">
-                <button onClick={handleSaveNote} className="flex items-center bg-deep-blue text-white px-4 py-2 rounded-lg font-bold hover:bg-deep-blue/90 transition-all shadow-md">
+                <button onClick={handleSaveNote} className="flex items-center bg-orange-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-orange-700 transition-all shadow-lg active:scale-95">
                   <Save size={16} className="mr-2" /> {noteSaved ? 'Saved!' : 'Submit to Journal'}
                 </button>
               </div>
@@ -395,7 +401,7 @@ const FocusTimer: React.FC = () => {
 
               <form onSubmit={handleAddGoal} className="flex items-center space-x-2 border-t border-gray-100 pt-4">
                 <input type="text" placeholder="Add goal..." className="flex-1 text-sm border-none outline-none bg-transparent" value={newGoalText} onChange={(e) => setNewGoalText(e.target.value)} />
-                <button type="submit" className="text-brand-orange bg-orange-50 p-2 rounded-lg hover:bg-orange-100 transition-colors">
+                <button type="submit" className="text-orange-600 bg-orange-50 p-2 rounded-lg hover:bg-orange-100 transition-colors">
                   <Plus size={16} />
                 </button>
               </form>
@@ -403,8 +409,8 @@ const FocusTimer: React.FC = () => {
 
             {/* Flashcards */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h3 className="text-lg font-bold text-deep-blue mb-4 flex items-center">
-                <Bell className="mr-2 text-brand-orange" size={20} /> Flashcard Reminders
+              <h3 className="text-lg font-bold text-blue-900 mb-4 flex items-center">
+                <Bell className="mr-2 text-orange-500" size={20} /> Flashcard Reminders
               </h3>
 
               <div className="space-y-4 mb-6 max-h-48 overflow-y-auto">
@@ -441,7 +447,7 @@ const FocusTimer: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <button 
                 onClick={() => setIsAddingMaterial(!isAddingMaterial)}
-                className="w-full flex items-center justify-center bg-brand-orange text-white py-3 rounded-xl font-bold hover:bg-brand-orange/90 transition-all mb-6 shadow-orange-100 shadow-lg"
+                className="w-full flex items-center justify-center bg-orange-600 text-white py-3 rounded-xl font-bold hover:bg-orange-700 transition-all mb-6 shadow-orange-100 shadow-lg"
               >
                 <Plus size={18} className="mr-2" /> Add Material
               </button>
@@ -465,8 +471,8 @@ const FocusTimer: React.FC = () => {
 
             {/* Reading Stats */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h3 className="text-sm font-bold text-deep-blue flex items-center mb-4">
-                <BarChart2 size={16} className="mr-2 text-brand-orange" /> Recent Sessions
+              <h3 className="text-sm font-bold text-blue-900 flex items-center mb-4">
+                <BarChart2 size={16} className="mr-2 text-orange-500" /> Recent Sessions
               </h3>
               <div className="space-y-4">
                 {readingLogs.slice(0, 5).map(log => (
@@ -496,7 +502,7 @@ const FocusTimer: React.FC = () => {
                     <input 
                       type="text" 
                       placeholder="Title of Book / Article" 
-                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange outline-none"
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none"
                       value={newItemTitle}
                       onChange={e => setNewItemTitle(e.target.value)}
                       required
@@ -504,27 +510,27 @@ const FocusTimer: React.FC = () => {
                     <input 
                       type="text" 
                       placeholder="Course / Category (e.g. History)" 
-                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange outline-none"
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none"
                       value={newItemCategory}
                       onChange={e => setNewItemCategory(e.target.value)}
                       required
                     />
                   </div>
                   <div className="flex space-x-4">
-                    <label className={`flex items-center space-x-2 cursor-pointer p-3 border rounded-xl flex-1 ${newItemType === 'link' ? 'border-brand-orange bg-orange-50' : 'border-gray-200'}`}>
+                    <label className={`flex items-center space-x-2 cursor-pointer p-3 border rounded-xl flex-1 ${newItemType === 'link' ? 'border-orange-500 bg-orange-50' : 'border-gray-200'}`}>
                       <input type="radio" name="type" value="link" checked={newItemType === 'link'} onChange={() => setNewItemType('link')} className="hidden" />
-                      <ExternalLink size={16} className={newItemType === 'link' ? 'text-brand-orange' : 'text-gray-400'} />
-                      <span className={`font-medium ${newItemType === 'link' ? 'text-brand-orange' : 'text-gray-600'}`}>Link URL</span>
+                      <ExternalLink size={16} className={newItemType === 'link' ? 'text-orange-500' : 'text-gray-400'} />
+                      <span className={`font-medium ${newItemType === 'link' ? 'text-orange-600' : 'text-gray-600'}`}>Link URL</span>
                     </label>
-                    <label className={`flex items-center space-x-2 cursor-pointer p-3 border rounded-xl flex-1 ${newItemType === 'text' ? 'border-brand-orange bg-orange-50' : 'border-gray-200'}`}>
+                    <label className={`flex items-center space-x-2 cursor-pointer p-3 border rounded-xl flex-1 ${newItemType === 'text' ? 'border-orange-500 bg-orange-50' : 'border-gray-200'}`}>
                       <input type="radio" name="type" value="text" checked={newItemType === 'text'} onChange={() => setNewItemType('text')} className="hidden" />
-                      <BookOpen size={16} className={newItemType === 'text' ? 'text-brand-orange' : 'text-gray-400'} />
-                      <span className={`font-medium ${newItemType === 'text' ? 'text-brand-orange' : 'text-gray-600'}`}>Paste Text</span>
+                      <BookOpen size={16} className={newItemType === 'text' ? 'text-orange-500' : 'text-gray-400'} />
+                      <span className={`font-medium ${newItemType === 'text' ? 'text-orange-600' : 'text-gray-600'}`}>Paste Text</span>
                     </label>
-                    <label className={`flex items-center space-x-2 cursor-pointer p-3 border rounded-xl flex-1 ${newItemType === 'pdf' ? 'border-brand-orange bg-orange-50' : 'border-gray-200'}`}>
+                    <label className={`flex items-center space-x-2 cursor-pointer p-3 border rounded-xl flex-1 ${newItemType === 'pdf' ? 'border-orange-500 bg-orange-50' : 'border-gray-200'}`}>
                       <input type="radio" name="type" value="pdf" checked={newItemType === 'pdf'} onChange={() => setNewItemType('pdf')} className="hidden" />
-                      <BarChart2 size={16} className={newItemType === 'pdf' ? 'text-brand-orange' : 'text-gray-400'} />
-                      <span className={`font-medium ${newItemType === 'pdf' ? 'text-brand-orange' : 'text-gray-600'}`}>File / PDF</span>
+                      <BarChart2 size={16} className={newItemType === 'pdf' ? 'text-orange-500' : 'text-gray-400'} />
+                      <span className={`font-medium ${newItemType === 'pdf' ? 'text-orange-600' : 'text-gray-600'}`}>File / PDF</span>
                     </label>
                   </div>
                   
@@ -547,7 +553,7 @@ const FocusTimer: React.FC = () => {
                   ) : (
                     <textarea 
                         placeholder={newItemType === 'link' ? "https://..." : "Paste the article content here..."}
-                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange outline-none min-h-[100px]"
+                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none min-h-[100px]"
                         value={newItemContent}
                         onChange={e => setNewItemContent(e.target.value)}
                         required={newItemType !== 'pdf'}
@@ -558,7 +564,7 @@ const FocusTimer: React.FC = () => {
                     <button 
                         type="submit" 
                         disabled={isUploading}
-                        className="bg-brand-orange text-white px-6 py-2 rounded-xl font-bold hover:bg-brand-orange/90 transition-colors disabled:opacity-50"
+                        className="bg-orange-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-orange-700 transition-colors disabled:opacity-50"
                     >
                       {isUploading ? 'Uploading...' : 'Save to Library'}
                     </button>
@@ -583,11 +589,11 @@ const FocusTimer: React.FC = () => {
                       </button>
                     </div>
                     <div className="flex items-start justify-between mb-4">
-                      <span className="inline-block px-2 py-1 bg-orange-50 text-brand-orange text-xs font-bold rounded uppercase tracking-wide">
+                      <span className="inline-block px-2 py-1 bg-orange-50 text-orange-600 text-xs font-bold rounded uppercase tracking-wide">
                         {item.category}
                       </span>
                     </div>
-                    <h3 className="font-bold text-deep-blue mb-2 line-clamp-2 min-h-[3rem] tracking-tight">{item.title}</h3>
+                    <h3 className="font-bold text-blue-950 mb-2 line-clamp-2 min-h-[3rem] tracking-tight">{item.title}</h3>
                     <div className="flex items-center text-xs text-gray-400 mb-6">
                       {item.type === 'link' ? <ExternalLink size={14} className="mr-1" /> : <BookOpen size={14} className="mr-1" />}
                       {item.type === 'link' ? 'External Link' : 'Text Document'}
@@ -630,7 +636,7 @@ const FocusTimer: React.FC = () => {
             </div>
 
             <div className="flex items-center space-x-6 bg-gray-50 px-6 py-3 rounded-2xl border border-gray-200 shadow-inner">
-              <div className={`text-2xl font-mono font-black ${isReading ? 'text-brand-orange' : 'text-gray-400'}`}>
+              <div className={`text-2xl font-mono font-black ${isReading ? 'text-orange-600' : 'text-gray-400'}`}>
                 {formatTime(readingSeconds)}
               </div>
               <div className="h-8 w-px bg-gray-300"></div>
@@ -656,18 +662,18 @@ const FocusTimer: React.FC = () => {
                  {activeReaderItem.type === 'link' ? (
                    <div className="text-center py-12">
                      <ExternalLink size={64} className="mx-auto text-orange-200 mb-6" />
-                     <h3 className="text-2xl font-black text-deep-blue mb-4 tracking-tight">External Resource</h3>
+                     <h3 className="text-2xl font-black text-blue-950 mb-4 tracking-tight">External Resource</h3>
                      <p className="text-gray-500 mb-8 max-w-md mx-auto">This material is hosted externally. Click the button below to open it in a new tab. Keep this timer running to track your reading.</p>
                      <a 
                       href={activeReaderItem.content.startsWith('http') ? activeReaderItem.content : `https://${activeReaderItem.content}`} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="inline-flex items-center bg-brand-orange text-white px-8 py-3 rounded-xl font-bold hover:bg-brand-orange/90 transition-transform hover:-translate-y-1 shadow-lg shadow-orange-100"
+                      className="inline-flex items-center bg-orange-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-orange-700 transition-transform hover:-translate-y-1 shadow-lg shadow-orange-100"
                      >
                        Open Link <ExternalLink size={18} className="ml-2" />
                      </a>
                      <div className="mt-12 p-4 bg-orange-50 rounded-xl border border-orange-100 text-left">
-                       <p className="text-sm text-brand-orange flex items-center font-bold"><Zap size={16} className="mr-2" /> Pro Tip: You can copy paste important text from the link into your notes on the right!</p>
+                       <p className="text-sm text-orange-600 flex items-center font-bold"><Zap size={16} className="mr-2" /> Pro Tip: You can copy paste important text from the link into your notes on the right!</p>
                      </div>
                    </div>
                  ) : (
@@ -681,8 +687,8 @@ const FocusTimer: React.FC = () => {
              {/* Notes Sidebar */}
              <div className="w-full lg:w-96 bg-white border-l border-gray-200 flex flex-col h-1/2 lg:h-full shadow-2xl z-10">
                <div className="p-4 border-b border-gray-100 bg-gray-50">
-                 <h3 className="font-bold text-deep-blue flex items-center">
-                   <PenTool size={16} className="mr-2 text-brand-orange" /> Study Notes
+                 <h3 className="font-bold text-blue-950 flex items-center">
+                   <PenTool size={16} className="mr-2 text-orange-500" /> Study Notes
                  </h3>
                </div>
                <textarea 

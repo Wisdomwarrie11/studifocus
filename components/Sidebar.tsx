@@ -38,9 +38,9 @@ const Sidebar: React.FC = () => {
       <div className="lg:hidden fixed top-0 left-0 w-full bg-white border-b border-gray-100 z-30 px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
-            SR
+            SF
           </div>
-          <h1 className="text-xl font-bold text-gray-800">StudiRad</h1>
+          <h1 className="text-xl font-bold text-gray-800">StudiFocus</h1>
         </div>
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -71,7 +71,7 @@ const Sidebar: React.FC = () => {
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
               SF
             </div>
-            <h1 className="text-xl font-bold text-gray-800">StudiRad</h1>
+            <h1 className="text-xl font-bold text-gray-800">StudiFocus</h1>
           </div>
           <p className="text-xs text-gray-400 mt-1 ml-10 uppercase tracking-wider">
             {user.role === UserRole.ADMIN ? 'Administrator' : 'Student Portal'}
