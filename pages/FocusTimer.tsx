@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Play, Pause, RotateCcw, CheckSquare, PenTool, Zap, Plus, Save, Bell, 
   BookOpen, Clock, LayoutGrid, Library, X, ExternalLink, Trash2, StopCircle, 
-  ChevronRight, BarChart2, Brain, Sparkles, MessageSquare, Volume2, VolumeX
+  ChevronRight, BarChart2, Brain, Sparkles, MessageSquare, Volume2, VolumeX,
+  PlusSquare, ZoomIn, ZoomOut, Rabbit, Turtle, Type
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { LibraryItem } from '../types';
@@ -72,8 +73,14 @@ const FocusTimer: React.FC = () => {
   
   // Voice Reader state (TTS)
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isAudioPaused, setIsAudioPaused] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  // Reader Controls
+  const [zoomLevel, setZoomLevel] = useState(100);
+  const [selectionMenu, setSelectionMenu] = useState<{ x: number, y: number, text: string } | null>(null);
 
   // Notes Modal state
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
@@ -86,21 +93,94 @@ const FocusTimer: React.FC = () => {
   }, []);
 
   const toggleSpeech = () => {
-    if (!activeReaderItem || activeReaderItem.type !== 'text') return;
+    if (!activeReaderItem) return;
 
     if (isSpeaking) {
-      synthRef.current?.cancel();
-      setIsSpeaking(false);
+      if (isAudioPaused) {
+        synthRef.current?.resume();
+        setIsAudioPaused(false);
+      } else {
+        synthRef.current?.pause();
+        setIsAudioPaused(true);
+      }
       return;
     }
 
-    const utterance = new SpeechSynthesisUtterance(activeReaderItem.content);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+    let textToRead = '';
+    if (activeReaderItem.type === 'text') {
+      textToRead = activeReaderItem.content;
+    } else {
+      // For PDFs or Links, try to read the user notes as a summary if no other text is available
+      textToRead = activeReaderItem.userNotes || `This is a ${activeReaderItem.type} document titled ${activeReaderItem.title}. Add notes to have them read aloud.`;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(textToRead);
+    utterance.rate = playbackRate;
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      setIsAudioPaused(false);
+    };
+    utterance.onerror = () => {
+      setIsSpeaking(false);
+      setIsAudioPaused(false);
+    };
     utteranceRef.current = utterance;
     
     setIsSpeaking(true);
+    setIsAudioPaused(false);
     synthRef.current?.speak(utterance);
+  };
+
+  const stopSpeech = () => {
+    synthRef.current?.cancel();
+    setIsSpeaking(false);
+    setIsAudioPaused(false);
+  };
+
+  const handleRateChange = (rate: number) => {
+    setPlaybackRate(rate);
+    if (isSpeaking) {
+      // Re-start with new rate if currently speaking
+      synthRef.current?.cancel();
+      const utterance = new SpeechSynthesisUtterance(activeReaderItem?.content || '');
+      utterance.rate = rate;
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        setIsAudioPaused(false);
+      };
+      utteranceRef.current = utterance;
+      synthRef.current?.speak(utterance);
+    }
+  };
+
+  const handleTextSelection = (e: React.MouseEvent) => {
+    const selection = window.getSelection();
+    const text = selection?.toString().trim();
+    
+    if (text && text.length > 0) {
+      const range = selection?.getRangeAt(0);
+      if (range) {
+        const rect = range.getBoundingClientRect();
+        setSelectionMenu({
+          x: rect.left + window.scrollX + (rect.width / 2),
+          y: rect.top + window.scrollY - 40,
+          text
+        });
+      }
+    } else {
+      setSelectionMenu(null);
+    }
+  };
+
+  const addSelectionToNotes = () => {
+    if (selectionMenu && activeReaderItem) {
+      const newNotes = (activeReaderItem.userNotes || '') + '\n\n' + selectionMenu.text;
+      updateLibraryItemNote(activeReaderItem.id, newNotes);
+      setActiveReaderItem({ ...activeReaderItem, userNotes: newNotes });
+      setSelectionMenu(null);
+      window.getSelection()?.removeAllRanges();
+      alert("Added to notes!");
+    }
   };
 
   useEffect(() => {
@@ -301,10 +381,12 @@ const FocusTimer: React.FC = () => {
     }
     if (synthRef.current) synthRef.current.cancel();
     setIsSpeaking(false);
+    setIsAudioPaused(false);
     setActiveReaderItem(null);
     setIsReading(false);
     setReadingSeconds(0);
     setIsNotesModalOpen(false);
+    setZoomLevel(100);
   };
 
   // Reading Timer Effect
@@ -698,68 +780,106 @@ const FocusTimer: React.FC = () => {
 
       {/* ======================= READER MODE ======================= */}
       {activeTab === 'library' && activeReaderItem && (
-        <div className="fixed inset-0 bg-white z-50 flex flex-col animate-fade-in">
+        <div className="fixed inset-0 bg-white z-[60] flex flex-col animate-fade-in">
           {/* Reader Header */}
-          <div className="bg-white border-b border-gray-200 p-4 px-8 flex justify-between items-center shadow-sm">
-            <div className="flex items-center">
-              <button onClick={closeReader} className="mr-4 p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500">
-                <X size={24} />
+          <div className="bg-white border-b border-gray-200 p-2 sm:p-4 px-3 sm:px-8 flex flex-col sm:flex-row justify-between items-center shadow-sm space-y-2 sm:space-y-0">
+            <div className="flex items-center w-full sm:w-auto overflow-hidden">
+              <button 
+                onClick={closeReader} 
+                className="mr-2 sm:mr-4 p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 flex-shrink-0"
+              >
+                <X size={20} className="sm:w-6 sm:h-6" />
               </button>
-              <div>
-                <h2 className="text-xl font-bold text-gray-800">{activeReaderItem.title}</h2>
-                <p className="text-sm text-gray-500">{activeReaderItem.category}</p>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-sm sm:text-xl font-bold text-gray-800 truncate">{activeReaderItem.title}</h2>
+                <p className="text-[9px] sm:text-sm text-gray-400 uppercase tracking-widest font-medium">{activeReaderItem.category}</p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-3 sm:space-x-6 bg-gray-50 px-3 sm:px-6 py-2 sm:py-3 rounded-2xl border border-gray-200 shadow-inner">
-              {activeReaderItem.type === 'text' && (
+            <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto gap-2">
+              {/* TTS Controls */}
+              <div className="flex items-center bg-gray-100 p-1 rounded-xl sm:space-x-2">
                 <button 
                   onClick={toggleSpeech}
-                  className={`p-2 rounded-full transition-all shadow-sm ${isSpeaking ? 'bg-brand-orange text-white' : 'bg-white text-gray-400 hover:text-brand-orange'}`}
-                  title={isSpeaking ? 'Stop Reading' : 'Read Passage'}
+                  className={`p-1.5 sm:p-2 rounded-lg transition-all ${isSpeaking ? 'bg-brand-orange text-white' : 'text-gray-500 hover:text-brand-orange'}`}
+                  title={isSpeaking ? (isAudioPaused ? 'Resume' : 'Pause') : 'Read Content'}
                 >
-                  {isSpeaking ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                  {!isSpeaking ? <Volume2 size={16} className="sm:w-[18px] sm:h-[18px]" /> : (isAudioPaused ? <Play size={16} className="sm:w-[18px] sm:h-[18px]" /> : <Pause size={16} className="sm:w-[18px] sm:h-[18px]" />)}
                 </button>
-              )}
-              <div className="h-8 w-px bg-gray-300 hidden sm:block"></div>
-              <div className={`text-xl sm:text-2xl font-mono font-black ${isReading ? 'text-brand-orange' : 'text-gray-400'}`}>
-                {formatTime(readingSeconds)}
+                {isSpeaking && (
+                  <button onClick={stopSpeech} className="p-1.5 sm:p-2 text-red-500 hover:bg-red-50 rounded-lg">
+                    <VolumeX size={16} className="sm:w-[18px] sm:h-[18px]" />
+                  </button>
+                )}
+                <div className="flex items-center space-x-1 sm:px-2 border-l border-gray-100 ml-1">
+                  <button onClick={() => handleRateChange(Math.max(0.25, playbackRate - 0.25))} className="p-1 text-gray-400 hover:text-brand-orange focus:outline-none"><Turtle size={13} className="sm:w-[14px] sm:h-[14px]" /></button>
+                  <span className="text-[9px] sm:text-xs font-bold text-gray-600 min-w-[2rem] text-center">{playbackRate}x</span>
+                  <button onClick={() => handleRateChange(Math.min(2, playbackRate + 0.25))} className="p-1 text-gray-400 hover:text-brand-orange focus:outline-none"><Rabbit size={13} className="sm:w-[14px] sm:h-[14px]" /></button>
+                </div>
               </div>
-              <div className="h-8 w-px bg-gray-300"></div>
-              <button 
-                onClick={() => setIsReading(!isReading)}
-                className={`p-2 rounded-full text-white transition-all shadow-md ${isReading ? 'bg-amber-500 hover:bg-amber-600' : 'bg-green-500 hover:bg-green-600'}`}
-              >
-                {isReading ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
-              </button>
-              <button 
-                onClick={() => setIsNotesModalOpen(true)}
-                className="lg:hidden p-2 rounded-full bg-deep-blue text-white shadow-md active:scale-95"
-                title="Take Notes"
-              >
-                <PenTool size={20} />
-              </button>
+
+              {/* Timer & Other Controls */}
+              <div className="flex items-center space-x-2 sm:space-x-4 bg-gray-50 px-2 sm:px-4 py-1 sm:py-2.5 rounded-xl border border-gray-200 shadow-inner">
+                <div className={`text-xs sm:text-2xl font-mono font-black ${isReading ? 'text-brand-orange' : 'text-gray-400'}`}>
+                  {formatTime(readingSeconds)}
+                </div>
+                <button 
+                  onClick={() => setIsReading(!isReading)}
+                  className={`p-1.5 sm:p-2 rounded-full text-white transition-all shadow-md active:scale-95 ${isReading ? 'bg-amber-500 hover:bg-amber-600' : 'bg-green-500 hover:bg-green-600'}`}
+                >
+                  {isReading ? <Pause size={14} className="sm:w-[16px] sm:h-[16px]" fill="currentColor" /> : <Play size={14} className="sm:w-[16px] sm:h-[16px]" fill="currentColor" />}
+                </button>
+                <div className="h-5 w-px bg-gray-200"></div>
+                <button 
+                  onClick={() => setIsNotesModalOpen(true)}
+                  className="md:hidden p-1.5 sm:p-2 rounded-lg bg-deep-blue text-white shadow-sm active:scale-90"
+                  title="Take Notes"
+                >
+                  <PenTool size={14} className="sm:w-[16px] sm:h-[16px]" />
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Reader Body */}
-          <div className="flex-1 overflow-hidden flex flex-col lg:flex-row relative">
+          <div className="flex-1 flex flex-col md:flex-row relative min-h-0">
              {/* Content Area */}
-             <div className="flex-1 bg-gray-50 p-4 md:p-6 overflow-y-auto">
-               <div className={`mx-auto bg-white min-h-full shadow-sm rounded-2xl border border-gray-200 overflow-hidden flex flex-col ${activeReaderItem.type === 'text' ? 'max-w-4xl p-8 lg:p-12' : 'max-w-6xl h-full'}`}>
+             <div className="flex-1 bg-gray-50 p-2 sm:p-6 overflow-y-auto relative touch-auto" onMouseUp={handleTextSelection}>
+               {/* Selection Menu */}
+               {selectionMenu && (
+                 <div 
+                   className="absolute z-[70] bg-deep-blue text-white rounded-lg shadow-xl py-2 px-3 animate-slide-up flex flex-col space-y-1"
+                   style={{ left: selectionMenu.x, top: selectionMenu.y, transform: 'translateX(-50%)' }}
+                 >
+                   <button onClick={addSelectionToNotes} className="text-xs font-bold flex items-center hover:text-brand-orange transition-colors">
+                     <PlusSquare size={14} className="mr-2" /> Add to Notes
+                   </button>
+                 </div>
+               )}
+
+               <div className={`mx-auto bg-white shadow-sm rounded-2xl border border-gray-200 flex flex-col relative transition-all duration-300 ${activeReaderItem.type === 'text' ? 'max-w-4xl p-5 sm:p-12 min-h-full' : 'max-w-6xl w-full h-[calc(100vh-140px)] sm:h-[calc(100vh-180px)] md:h-full'}`}>
+                 
+                 {/* Zoom Controls Overlay */}
+                 <div className="absolute top-4 right-4 z-10 flex bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg shadow-sm">
+                   <button onClick={() => setZoomLevel(prev => Math.max(50, prev - 10))} className="p-1.5 sm:p-2 hover:bg-gray-100 text-gray-500 outline-none focus:ring-1 focus:ring-brand-orange rounded-l-lg"><ZoomOut size={14} className="sm:w-4 sm:h-4" /></button>
+                   <div className="px-1 sm:px-2 flex items-center text-[10px] font-black text-gray-500 border-x border-gray-100 min-w-[2.5rem] sm:min-w-[3rem] justify-center">{zoomLevel}%</div>
+                   <button onClick={() => setZoomLevel(prev => Math.min(300, prev + 10))} className="p-1.5 sm:p-2 hover:bg-gray-100 text-gray-500 outline-none focus:ring-1 focus:ring-brand-orange rounded-r-lg"><ZoomIn size={14} className="sm:w-4 sm:h-4" /></button>
+                 </div>
+
                  {activeReaderItem.type === 'link' || activeReaderItem.type === 'pdf' ? (
-                   <div className="flex-1 flex flex-col h-full min-h-[70vh]">
-                      <iframe 
-                        src={(activeReaderItem.content.startsWith('http') || activeReaderItem.content.startsWith('blob')) ? activeReaderItem.content : `https://${activeReaderItem.content}`} 
-                        className="flex-1 w-full border-none bg-gray-50"
+                   <div className="flex-1 flex flex-col h-full">
+                      <iframe
+                        src={(activeReaderItem.content.startsWith('http') || activeReaderItem.content.startsWith('blob')) 
+                          ? `${activeReaderItem.content}#view=FitH&zoom=${zoomLevel}` 
+                          : `https://${activeReaderItem.content}#view=FitH&zoom=${zoomLevel}`} 
+                        className="flex-1 w-full border-none bg-gray-50 rounded-t-xl"
                         title={activeReaderItem.title}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
+                        loading="lazy"
                       />
                       <div className="bg-white p-3 border-t border-gray-100 flex items-center justify-between text-[10px] sm:text-xs text-gray-400">
                         <div className="flex items-center">
                           <Zap size={14} className="mr-2 text-brand-orange" />
-                          <span>If content is blocked, use the external link button.</span>
+                          <span>Enhanced PDF Viewer - Zoom supported</span>
                         </div>
                         <a 
                           href={(activeReaderItem.content.startsWith('http') || activeReaderItem.content.startsWith('blob')) ? activeReaderItem.content : `https://${activeReaderItem.content}`} 
@@ -767,48 +887,48 @@ const FocusTimer: React.FC = () => {
                           rel="noopener noreferrer"
                           className="text-brand-orange font-black uppercase tracking-widest hover:underline flex items-center bg-brand-orange/5 px-3 py-1 rounded-lg"
                         >
-                          Raw View <ExternalLink size={12} className="ml-1" />
+                          External View <ExternalLink size={12} className="ml-1" />
                         </a>
                       </div>
                    </div>
                  ) : (
-                   <div className="prose prose-orange max-w-none">
-                     <p className="whitespace-pre-wrap text-deep-blue/90 leading-relaxed text-lg">{activeReaderItem.content}</p>
+                   <div className="prose prose-orange max-w-none transition-all duration-300" style={{ fontSize: `${zoomLevel/100}rem` }}>
+                     <p className="whitespace-pre-wrap text-deep-blue/90 leading-relaxed">{activeReaderItem.content}</p>
                    </div>
                  )}
                </div>
              </div>
 
-             {/* Notes Sidebar / Mobile Modal */}
-             <div className={`
-               ${isNotesModalOpen ? 'fixed inset-0 z-50 flex' : 'hidden lg:flex'}
-               w-full lg:w-96 bg-white border-l border-gray-200 flex-col shadow-2xl z-10 transition-transform duration-300
-             `}>
-               <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                 <h3 className="font-bold text-blue-950 flex items-center">
-                   <PenTool size={16} className="mr-2 text-brand-orange" /> Study Notes
-                 </h3>
-                 {isNotesModalOpen && (
-                   <button 
-                     onClick={() => setIsNotesModalOpen(false)}
-                     className="p-2 hover:bg-gray-200 rounded-full text-gray-500 lg:hidden font-bold flex items-center"
-                   >
-                     <span className="mr-2 text-xs uppercase tracking-widest">Save & Close</span>
-                     <X size={20} />
-                   </button>
-                 )}
-               </div>
-               <textarea 
-                 className="flex-1 p-4 resize-none outline-none focus:bg-orange-50/20 transition-colors text-lg lg:text-base"
-                 placeholder="Type your notes here while you read..."
-                 value={activeReaderItem.userNotes}
-                 onChange={handleReaderNoteChange}
-                 autoFocus={isNotesModalOpen}
-               />
-               <div className="p-3 bg-gray-50 text-xs text-gray-400 text-center border-t border-gray-100 font-medium">
-                 Notes are saved automatically
-               </div>
-             </div>
+              {/* Notes Sidebar / Mobile Modal */}
+              <div className={`
+                ${isNotesModalOpen ? 'fixed inset-0 z-[70] flex' : 'hidden md:flex'}
+                w-full md:w-80 lg:w-96 bg-white border-l border-gray-200 flex-col shadow-2xl transition-transform duration-300 overflow-hidden
+              `}>
+                <div className="p-4 sm:p-5 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                  <h3 className="font-bold text-blue-950 flex items-center text-sm sm:text-base">
+                    <PenTool size={16} className="mr-2 text-brand-orange" /> Study Notes
+                  </h3>
+                  {isNotesModalOpen && (
+                    <button 
+                      onClick={() => setIsNotesModalOpen(false)}
+                      className="p-2 hover:bg-gray-200 rounded-full text-gray-500 md:hidden font-bold flex items-center"
+                    >
+                      <span className="mr-2 text-[10px] uppercase tracking-widest font-black">Save & Close</span>
+                      <X size={20} />
+                    </button>
+                  )}
+                </div>
+                <textarea 
+                  className="flex-1 p-5 sm:p-6 resize-none outline-none focus:bg-orange-50/20 transition-colors text-base sm:text-base leading-relaxed"
+                  placeholder="Type your notes here while you read... (Highlighted text can be added here automatically)"
+                  value={activeReaderItem.userNotes}
+                  onChange={handleReaderNoteChange}
+                  autoFocus={isNotesModalOpen}
+                />
+                <div className="p-3 bg-gray-50 text-[10px] text-gray-400 text-center border-t border-gray-100 font-medium uppercase tracking-tighter">
+                  Notes are saved automatically
+                </div>
+              </div>
           </div>
         </div>
       )}
