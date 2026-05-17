@@ -434,9 +434,18 @@ const FocusTimer: React.FC = () => {
 
             {/* Daily Note */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h3 className="font-bold text-blue-900 mb-4 flex items-center">
-                <PenTool className="mr-2 text-brand-orange" size={20} /> What did you learn today?
-              </h3>
+               <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-blue-900 flex items-center">
+                  <PenTool className="mr-2 text-brand-orange" size={20} /> What did you learn today?
+                </h3>
+                <button 
+                  onClick={() => toggleSpeechRecognition((text) => setDailyNote(prev => prev + ' ' + text))}
+                  className={`p-2 rounded-full transition-all ${isListening ? 'bg-red-100 text-red-500 animate-pulse' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                  title="Voice to Text"
+                >
+                  {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+                </button>
+              </div>
               <textarea
                 className="w-full p-4 border border-gray-100 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brand-orange outline-none resize-none h-32 transition-all"
                 placeholder="Summarize your key takeaways..."
@@ -735,24 +744,31 @@ const FocusTimer: React.FC = () => {
           {/* Reader Body */}
           <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
              {/* Content Area */}
-             <div className="flex-1 bg-gray-50 p-6 overflow-y-auto">
-               <div className="max-w-4xl mx-auto bg-white min-h-full shadow-sm rounded-2xl p-8 lg:p-12 border border-gray-200">
-                 {activeReaderItem.type === 'link' ? (
-                   <div className="text-center py-12">
-                     <ExternalLink size={64} className="mx-auto text-orange-200 mb-6" />
-                     <h3 className="text-2xl font-black text-blue-950 mb-4 tracking-tight">External Resource</h3>
-                     <p className="text-gray-500 mb-8 max-w-md mx-auto">This material is hosted externally. Click the button below to open it in a new tab. Keep this timer running to track your reading.</p>
-                     <a 
-                      href={activeReaderItem.content.startsWith('http') ? activeReaderItem.content : `https://${activeReaderItem.content}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center bg-orange-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-orange-700 transition-transform hover:-translate-y-1 shadow-lg shadow-orange-100"
-                     >
-                       Open Link <ExternalLink size={18} className="ml-2" />
-                     </a>
-                     <div className="mt-12 p-4 bg-orange-50 rounded-xl border border-orange-100 text-left">
-                       <p className="text-sm text-orange-600 flex items-center font-bold"><Zap size={16} className="mr-2" /> Pro Tip: You can copy paste important text from the link into your notes on the right!</p>
-                     </div>
+             <div className="flex-1 bg-gray-50 p-4 md:p-6 overflow-y-auto">
+               <div className={`mx-auto bg-white min-h-full shadow-sm rounded-2xl border border-gray-200 overflow-hidden flex flex-col ${activeReaderItem.type === 'text' ? 'max-w-4xl p-8 lg:p-12' : 'max-w-6xl h-full'}`}>
+                 {activeReaderItem.type === 'link' || activeReaderItem.type === 'pdf' ? (
+                   <div className="flex-1 flex flex-col h-full min-h-[70vh]">
+                      <iframe 
+                        src={(activeReaderItem.content.startsWith('http') || activeReaderItem.content.startsWith('blob')) ? activeReaderItem.content : `https://${activeReaderItem.content}`} 
+                        className="flex-1 w-full border-none bg-gray-50"
+                        title={activeReaderItem.title}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                      <div className="bg-white p-3 border-t border-gray-100 flex items-center justify-between text-[10px] sm:text-xs text-gray-400">
+                        <div className="flex items-center">
+                          <Zap size={14} className="mr-2 text-brand-orange" />
+                          <span>If content is blocked, use the external link button.</span>
+                        </div>
+                        <a 
+                          href={(activeReaderItem.content.startsWith('http') || activeReaderItem.content.startsWith('blob')) ? activeReaderItem.content : `https://${activeReaderItem.content}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-brand-orange font-black uppercase tracking-widest hover:underline flex items-center bg-brand-orange/5 px-3 py-1 rounded-lg"
+                        >
+                          Raw View <ExternalLink size={12} className="ml-1" />
+                        </a>
+                      </div>
                    </div>
                  ) : (
                    <div className="prose prose-orange max-w-none">
