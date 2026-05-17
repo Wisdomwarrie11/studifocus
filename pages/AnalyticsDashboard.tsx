@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatTime } from '../pages/utils/timeUtils';
-import { analyzeActivities } from '../services/geminiService';
+import { analyzeProgress } from '../services/geminiService';
 
 const AnalyticsDashboard: React.FC = () => {
   const { activities, readingLogs, dailyGoals, roadmapTasks, user } = useApp();
