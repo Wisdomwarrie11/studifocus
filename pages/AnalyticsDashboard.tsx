@@ -20,7 +20,7 @@ const AnalyticsDashboard: React.FC = () => {
     const fetchAnalysis = async () => {
         if (activities.length > 3 || readingLogs.length > 0) {
             setIsAnalyzing(true);
-            const analysis = await analyzeActivities(activities, readingLogs);
+            const analysis = await analyzeProgress(activities, readingLogs);
             setSmartAnalysis(analysis);
             setIsAnalyzing(false);
         }
