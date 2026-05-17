@@ -18,7 +18,7 @@ export const getMotivationalCoach = async (name: string, streak: number, points:
   }
 };
 
-export const analyzeActivities = async (activities: any[], readingLogs: any[]): Promise<string> => {
+export const analyzeProgress = async (activities: any[], readingLogs: any[]): Promise<string> => {
   try {
     const response = await fetch('/api/gemini/analyze', {
       method: 'POST',
