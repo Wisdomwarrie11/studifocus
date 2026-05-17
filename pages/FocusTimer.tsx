@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Play, Pause, RotateCcw, CheckSquare, PenTool, Zap, Plus, Save, Bell, 
   BookOpen, Clock, LayoutGrid, Library, X, ExternalLink, Trash2, StopCircle, 
-  ChevronRight, BarChart2, Brain, Sparkles, MessageSquare, Mic, MicOff
+  ChevronRight, BarChart2, Brain, Sparkles, MessageSquare, Volume2, VolumeX
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { LibraryItem } from '../types';
@@ -69,45 +69,38 @@ const FocusTimer: React.FC = () => {
   // AI Coach state
   const [coachMessage, setCoachMessage] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const recognitionRef = useRef<any>(null);
+  
+  // Voice Reader state (TTS)
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const synthRef = useRef<SpeechSynthesis | null>(null);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
+  // Notes Modal state
+  const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
 
-  const toggleSpeechRecognition = (onResult: (text: string) => void) => {
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
+  useEffect(() => {
+    synthRef.current = window.speechSynthesis;
+    return () => {
+      if (synthRef.current) synthRef.current.cancel();
+    };
+  }, []);
+
+  const toggleSpeech = () => {
+    if (!activeReaderItem || activeReaderItem.type !== 'text') return;
+
+    if (isSpeaking) {
+      synthRef.current?.cancel();
+      setIsSpeaking(false);
       return;
     }
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert("Your browser does not support Speech Recognition. Please try Chrome.");
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = (event: any) => {
-      console.error("Speech Recognition Error", event.error);
-      setIsListening(false);
-    };
-
-    recognition.onresult = (event: any) => {
-      let transcript = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        transcript += event.results[i][0].transcript;
-      }
-      onResult(transcript);
-    };
-
-    recognition.start();
-    recognitionRef.current = recognition;
+    const utterance = new SpeechSynthesisUtterance(activeReaderItem.content);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    utteranceRef.current = utterance;
+    
+    setIsSpeaking(true);
+    synthRef.current?.speak(utterance);
   };
 
   useEffect(() => {
@@ -306,9 +299,12 @@ const FocusTimer: React.FC = () => {
         addReadingLog(activeReaderItem.id, activeReaderItem.title, readingSeconds);
       }
     }
+    if (synthRef.current) synthRef.current.cancel();
+    setIsSpeaking(false);
     setActiveReaderItem(null);
     setIsReading(false);
     setReadingSeconds(0);
+    setIsNotesModalOpen(false);
   };
 
   // Reading Timer Effect
@@ -438,13 +434,6 @@ const FocusTimer: React.FC = () => {
                 <h3 className="font-bold text-blue-900 flex items-center">
                   <PenTool className="mr-2 text-brand-orange" size={20} /> What did you learn today?
                 </h3>
-                <button 
-                  onClick={() => toggleSpeechRecognition((text) => setDailyNote(prev => prev + ' ' + text))}
-                  className={`p-2 rounded-full transition-all ${isListening ? 'bg-red-100 text-red-500 animate-pulse' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-                  title="Voice to Text"
-                >
-                  {isListening ? <MicOff size={18} /> : <Mic size={18} />}
-                </button>
               </div>
               <textarea
                 className="w-full p-4 border border-gray-100 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brand-orange outline-none resize-none h-32 transition-all"
@@ -722,8 +711,18 @@ const FocusTimer: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-6 bg-gray-50 px-6 py-3 rounded-2xl border border-gray-200 shadow-inner">
-              <div className={`text-2xl font-mono font-black ${isReading ? 'text-brand-orange' : 'text-gray-400'}`}>
+            <div className="flex items-center space-x-3 sm:space-x-6 bg-gray-50 px-3 sm:px-6 py-2 sm:py-3 rounded-2xl border border-gray-200 shadow-inner">
+              {activeReaderItem.type === 'text' && (
+                <button 
+                  onClick={toggleSpeech}
+                  className={`p-2 rounded-full transition-all shadow-sm ${isSpeaking ? 'bg-brand-orange text-white' : 'bg-white text-gray-400 hover:text-brand-orange'}`}
+                  title={isSpeaking ? 'Stop Reading' : 'Read Passage'}
+                >
+                  {isSpeaking ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                </button>
+              )}
+              <div className="h-8 w-px bg-gray-300 hidden sm:block"></div>
+              <div className={`text-xl sm:text-2xl font-mono font-black ${isReading ? 'text-brand-orange' : 'text-gray-400'}`}>
                 {formatTime(readingSeconds)}
               </div>
               <div className="h-8 w-px bg-gray-300"></div>
@@ -733,16 +732,18 @@ const FocusTimer: React.FC = () => {
               >
                 {isReading ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
               </button>
-              {readingSeconds > 0 && (
-                 <button onClick={closeReader} className="text-red-500 font-black text-sm hover:underline">
-                    Stop & Save
-                 </button>
-              )}
+              <button 
+                onClick={() => setIsNotesModalOpen(true)}
+                className="lg:hidden p-2 rounded-full bg-deep-blue text-white shadow-md active:scale-95"
+                title="Take Notes"
+              >
+                <PenTool size={20} />
+              </button>
             </div>
           </div>
 
           {/* Reader Body */}
-          <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
+          <div className="flex-1 overflow-hidden flex flex-col lg:flex-row relative">
              {/* Content Area */}
              <div className="flex-1 bg-gray-50 p-4 md:p-6 overflow-y-auto">
                <div className={`mx-auto bg-white min-h-full shadow-sm rounded-2xl border border-gray-200 overflow-hidden flex flex-col ${activeReaderItem.type === 'text' ? 'max-w-4xl p-8 lg:p-12' : 'max-w-6xl h-full'}`}>
@@ -778,29 +779,31 @@ const FocusTimer: React.FC = () => {
                </div>
              </div>
 
-             {/* Notes Sidebar */}
-             <div className="w-full lg:w-96 bg-white border-l border-gray-200 flex flex-col h-1/2 lg:h-full shadow-2xl z-10">
+             {/* Notes Sidebar / Mobile Modal */}
+             <div className={`
+               ${isNotesModalOpen ? 'fixed inset-0 z-50 flex' : 'hidden lg:flex'}
+               w-full lg:w-96 bg-white border-l border-gray-200 flex-col shadow-2xl z-10 transition-transform duration-300
+             `}>
                <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                  <h3 className="font-bold text-blue-950 flex items-center">
                    <PenTool size={16} className="mr-2 text-brand-orange" /> Study Notes
                  </h3>
-                 <button 
-                   onClick={() => toggleSpeechRecognition((text) => {
-                     const newNotes = (activeReaderItem.userNotes || '') + ' ' + text;
-                     updateLibraryItemNote(activeReaderItem.id, newNotes);
-                     setActiveReaderItem({ ...activeReaderItem, userNotes: newNotes });
-                   })}
-                   className={`p-1.5 rounded-full transition-all ${isListening ? 'bg-red-100 text-red-500 animate-pulse' : 'hover:bg-gray-200 text-gray-500'}`}
-                   title="Voice to Text"
-                 >
-                   {isListening ? <MicOff size={16} /> : <Mic size={16} />}
-                 </button>
+                 {isNotesModalOpen && (
+                   <button 
+                     onClick={() => setIsNotesModalOpen(false)}
+                     className="p-2 hover:bg-gray-200 rounded-full text-gray-500 lg:hidden font-bold flex items-center"
+                   >
+                     <span className="mr-2 text-xs uppercase tracking-widest">Save & Close</span>
+                     <X size={20} />
+                   </button>
+                 )}
                </div>
                <textarea 
-                 className="flex-1 p-4 resize-none outline-none focus:bg-orange-50/20 transition-colors"
+                 className="flex-1 p-4 resize-none outline-none focus:bg-orange-50/20 transition-colors text-lg lg:text-base"
                  placeholder="Type your notes here while you read..."
                  value={activeReaderItem.userNotes}
                  onChange={handleReaderNoteChange}
+                 autoFocus={isNotesModalOpen}
                />
                <div className="p-3 bg-gray-50 text-xs text-gray-400 text-center border-t border-gray-100 font-medium">
                  Notes are saved automatically
