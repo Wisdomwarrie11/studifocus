@@ -1,7 +1,7 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 async function startServer() {
   const app = express();
@@ -11,7 +11,7 @@ async function startServer() {
 
   // Gemini API initialization
   const apiKey = process.env.GEMINI_API_KEY;
-  const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+  const genAI = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
   // API Route for Gemini Motivational Coach
   app.post("/api/gemini/coach", async (req, res) => {
@@ -21,7 +21,7 @@ async function startServer() {
       }
 
       const { name, streak, points, context } = req.body;
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Use the recommended model alias
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); 
 
       const prompt = `You are a motivational study coach. User ${name} has a ${streak} day streak and ${points} points. 
       The current context is: ${context}. Keep the message short (max 2 sentences), encouraging, and actionable.`;

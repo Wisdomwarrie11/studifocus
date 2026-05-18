@@ -3,7 +3,7 @@ import {
   Play, Pause, RotateCcw, CheckSquare, PenTool, Zap, Plus, Save, Bell, 
   BookOpen, Clock, LayoutGrid, Library, X, ExternalLink, Trash2, StopCircle, 
   ChevronRight, BarChart2, Brain, Sparkles, MessageSquare,
-  PlusSquare, ZoomIn, ZoomOut, Type
+  PlusSquare, Type
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { LibraryItem } from '../types';
@@ -72,7 +72,6 @@ const FocusTimer: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   
   // Reader Controls
-  const [zoomLevel, setZoomLevel] = useState(100);
   const [selectionMenu, setSelectionMenu] = useState<{ x: number, y: number, text: string } | null>(null);
 
   // Notes Modal state
@@ -308,7 +307,6 @@ const FocusTimer: React.FC = () => {
     setIsReading(false);
     setReadingSeconds(0);
     setIsNotesModalOpen(false);
-    setZoomLevel(100);
   };
 
   // Reading Timer Effect
@@ -743,26 +741,19 @@ const FocusTimer: React.FC = () => {
           </div>
 
           {/* Reader Body */}
-          <div className="flex-1 flex flex-col md:flex-row relative min-h-0 overflow-hidden">
+          <div className="flex-1 flex flex-col md:flex-row relative min-h-0 overflow-hidden bg-gray-100">
              {/* Content Area */}
-             <div className="flex-1 bg-gray-50 p-2 sm:p-6 flex flex-col relative touch-auto" onMouseUp={handleTextSelection}>
-               <div className={`mx-auto bg-white shadow-sm rounded-2xl border border-gray-200 flex flex-col relative transition-all duration-300 w-full h-full overflow-hidden ${activeReaderItem.type === 'text' ? 'max-w-4xl p-5 sm:p-12 overflow-y-auto' : 'max-w-6xl'}`}>
+             <div className="flex-1 flex flex-col relative h-full overflow-hidden p-2 sm:p-6">
+               <div className={`mx-auto bg-white shadow-sm rounded-2xl border border-gray-100 flex flex-col relative w-full h-full overflow-hidden ${activeReaderItem.type === 'text' ? 'max-w-4xl p-5 sm:p-12 overflow-y-auto' : 'max-w-6xl'}`}>
                  
-                 {/* Zoom Controls Overlay */}
-                 <div className="absolute top-4 right-4 z-10 flex bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg shadow-sm">
-                   <button onClick={() => setZoomLevel(prev => Math.max(50, prev - 10))} className="p-1.5 sm:p-2 hover:bg-gray-100 text-gray-500 outline-none focus:ring-1 focus:ring-brand-orange rounded-l-lg"><ZoomOut size={14} className="sm:w-4 sm:h-4" /></button>
-                   <div className="px-1 sm:px-2 flex items-center text-[10px] font-black text-gray-500 border-x border-gray-100 min-w-[2.5rem] sm:min-w-[3rem] justify-center">{zoomLevel}%</div>
-                   <button onClick={() => setZoomLevel(prev => Math.min(300, prev + 10))} className="p-1.5 sm:p-2 hover:bg-gray-100 text-gray-500 outline-none focus:ring-1 focus:ring-brand-orange rounded-r-lg"><ZoomIn size={14} className="sm:w-4 sm:h-4" /></button>
-                 </div>
-
                  {activeReaderItem.type === 'link' || activeReaderItem.type === 'pdf' ? (
                    <div className="flex-1 flex flex-col h-full overflow-hidden">
-                      <div className="flex-1 w-full bg-gray-50 relative overflow-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+                      <div className="flex-1 w-full bg-gray-50 relative overflow-auto scrolling-touch" style={{ WebkitOverflowScrolling: 'touch' }}>
                          <iframe
                           src={(activeReaderItem.content.startsWith('http') || activeReaderItem.content.startsWith('blob')) 
-                            ? `${activeReaderItem.content}#toolbar=0&navpanes=0&scrollbar=1&view=FitH&zoom=${zoomLevel}` 
-                            : `https://${activeReaderItem.content}#toolbar=0&navpanes=0&scrollbar=1&view=FitH&zoom=${zoomLevel}`}
-                          className="w-full h-full border-none min-h-[500px]"
+                            ? `${activeReaderItem.content}#view=FitH` 
+                            : `https://${activeReaderItem.content}#view=FitH`}
+                          className="w-full h-full border-none min-h-[100%]"
                           style={{ minHeight: '100%', display: 'block' }}
                           title={activeReaderItem.title}
                         />
@@ -783,8 +774,8 @@ const FocusTimer: React.FC = () => {
                       </div>
                    </div>
                  ) : (
-                   <div className="prose prose-orange max-w-none transition-all duration-300" style={{ fontSize: `${zoomLevel/100}rem` }}>
-                     <p className="whitespace-pre-wrap text-deep-blue/90 leading-relaxed">{activeReaderItem.content}</p>
+                   <div className="prose prose-orange max-w-none transition-all duration-300">
+                     <p className="whitespace-pre-wrap text-deep-blue/90 leading-relaxed text-sm sm:text-base">{activeReaderItem.content}</p>
                    </div>
                  )}
                </div>
@@ -793,7 +784,7 @@ const FocusTimer: React.FC = () => {
               {/* Notes Sidebar / Mobile Modal */}
               <div className={`
                 ${isNotesModalOpen ? 'fixed inset-0 z-[70] flex' : 'hidden md:flex'}
-                w-full md:w-80 lg:w-96 bg-white border-l border-gray-200 flex-col shadow-2xl transition-all duration-300 md:translate-x-0
+                w-full md:w-80 lg:w-96 flex-shrink-0 bg-white border-l border-gray-200 flex-col shadow-2xl md:shadow-none transition-all duration-300 md:relative md:z-10
               `}>
                 <div className="p-4 sm:p-5 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                   <h3 className="font-bold text-blue-950 flex items-center text-sm sm:text-base">
@@ -810,11 +801,10 @@ const FocusTimer: React.FC = () => {
                   )}
                 </div>
                 <textarea 
-                  className="flex-1 p-5 sm:p-6 resize-none outline-none focus:bg-orange-50/20 transition-colors text-base sm:text-base leading-relaxed"
-                  placeholder="Type your notes here while you read... (Highlighted text can be added here automatically)"
+                  className="flex-1 p-5 sm:p-6 resize-none outline-none focus:bg-orange-50/20 transition-colors text-base leading-relaxed"
+                  placeholder="Type your notes here while you read..."
                   value={activeReaderItem.userNotes}
                   onChange={handleReaderNoteChange}
-                  autoFocus={isNotesModalOpen}
                 />
                 <div className="p-3 bg-gray-50 text-[10px] text-gray-400 text-center border-t border-gray-100 font-medium uppercase tracking-tighter">
                   Notes are saved automatically
