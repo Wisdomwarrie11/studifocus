@@ -92,7 +92,7 @@ const MaterialReader: React.FC<MaterialReaderProps> = ({ material }) => {
       </div>
 
       {/* Content Viewer */}
-      <div className="border rounded-xl shadow p-2 md:p-4 max-h-[75vh] overflow-y-auto mb-4">
+      <div className="border rounded-xl shadow p-2 md:p-4 mb-4">
         {material.type === 'pdf' ? (
           <Document
             file={material.content}

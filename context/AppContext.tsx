@@ -117,6 +117,8 @@ interface AppContextType {
   addReadingLog: (itemId: string, itemTitle: string, durationSeconds: number) => void;
   deleteLibraryItem: (id: string) => void;
   saveStorageFeedback: (willingToPay: boolean) => Promise<void>;
+  deferredPrompt: any;
+  setDeferredPrompt: (prompt: any) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -139,12 +141,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [roadmapTasks, setRoadmapTasks] = useState<RoadmapTask[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [journals, setJournals] = useState<JournalEntry[]>([]);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   // --- Auth & Data Listener ---
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
   useEffect(() => {
     let activeUnsubs: (() => void)[] = [];
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log("Auth state changed:", firebaseUser ? "User logged in" : "No user");
       // Clean up any existing listeners first
       activeUnsubs.forEach(u => u());
       activeUnsubs = [];
@@ -550,7 +563,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       updateLibraryItemNote,
       saveStorageFeedback,
       addReadingLog,
-      deleteLibraryItem
+      deleteLibraryItem,
+      deferredPrompt,
+      setDeferredPrompt
     }}>
       {children}
     </AppContext.Provider>

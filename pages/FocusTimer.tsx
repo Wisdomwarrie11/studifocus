@@ -51,20 +51,7 @@ const FocusTimer: React.FC = () => {
           <h1 className="text-3xl font-black text-deep-blue mb-2 tracking-tight">
             StudiFocus
           </h1>
-          <div className="flex items-center space-x-4">
-            <p className="text-gray-500">
-              Welcome back,{" "}
-              <span className="text-brand-orange font-bold font-mono">
-                {user.name}
-              </span>
-            </p>
-            <button
-              onClick={logout}
-              className="text-[10px] uppercase tracking-widest font-black text-gray-400 hover:text-red-500 transition-colors"
-            >
-              Logout
-            </button>
-          </div>
+          
         </div>
         <div className="flex bg-gray-100 p-1 rounded-2xl mt-4 md:mt-0 shadow-inner">
           <button

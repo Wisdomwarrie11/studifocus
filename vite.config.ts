@@ -1,6 +1,7 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => {
@@ -12,17 +13,15 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [
         react(),
+        tailwindcss(),
         VitePWA({
           registerType: 'autoUpdate',
-          devOptions: {
-            enabled: true
-          },
           includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
           manifest: {
-            name: 'StudentFocus',
-            short_name: 'StudentFocus',
-            description: 'A comprehensive student focus timer and digital library',
-            theme_color: '#4f46e5',
+            name: 'StudiFocus: Virtual Study Room',
+            short_name: 'StudiFocus',
+            description: 'Focus, learn, and grow with AI-powered study tools.',
+            theme_color: '#002B5B',
             icons: [
               {
                 src: 'pwa-192x192.png',
@@ -45,8 +44,8 @@ export default defineConfig(({ mode }) => {
         })
       ],
       define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || ""),
+        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || "")
       },
       resolve: {
         alias: {

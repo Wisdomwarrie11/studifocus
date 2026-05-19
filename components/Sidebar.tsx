@@ -8,19 +8,28 @@ import {
   LogOut, 
   ShieldCheck,
   Menu,
-  X
+  X,
+  Smartphone
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { UserRole } from '../types';
 
 const Sidebar: React.FC = () => {
-  const { user, logout, announcements } = useApp();
+  const { user, logout, announcements, deferredPrompt, setDeferredPrompt } = useApp();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`User response to the install prompt: ${outcome}`);
+    setDeferredPrompt(null);
   };
 
   if (!user) return null;
@@ -128,6 +137,15 @@ const Sidebar: React.FC = () => {
         </nav>
 
         <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+          {deferredPrompt && (
+            <button 
+              onClick={handleInstallClick}
+              className="flex items-center space-x-3 px-4 py-2.5 mb-2 text-deep-blue bg-brand-orange/10 hover:bg-brand-orange/20 rounded-xl w-full transition-all group font-bold border border-brand-orange/20"
+            >
+              <Smartphone size={20} className="text-brand-orange" />
+              <span className="text-sm">Install App</span>
+            </button>
+          )}
           <div className="flex items-center space-x-3 px-4 py-3 mb-2 rounded-xl border border-transparent hover:border-gray-200 transition-all cursor-default">
             <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-brand-orange to-deep-blue flex items-center justify-center text-white text-sm font-bold shadow-sm">
               {user.name.charAt(0)}
