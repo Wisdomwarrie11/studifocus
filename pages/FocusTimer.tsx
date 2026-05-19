@@ -18,12 +18,14 @@ import {
   Trash2,
   StopCircle,
   ChevronRight,
+  ChevronLeft,
   BarChart2,
   Brain,
   Sparkles,
   MessageSquare,
   PlusSquare,
   Type,
+  Loader2,
 } from "lucide-react";
 import { useApp } from '../context/AppContext';
 import { LibraryItem } from '../types';
@@ -31,6 +33,14 @@ import RoadmapWidget from '../pages/RoadmapWidget';
 import AnalyticsDashboard from '../pages/AnalyticsDashboard';
 import { supabase } from '../src/supabase';
 import { getMotivationalCoach, analyzeProgress } from '../services/geminiService';
+
+// PDF Viewer Imports
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
+
+// Set PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const FocusTimer: React.FC = () => {
   const {
@@ -109,6 +119,37 @@ const FocusTimer: React.FC = () => {
     y: number;
     text: string;
   } | null>(null);
+
+  // PDF Page State
+  const [numPages, setNumPages] = useState<number | null>(null);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pdfScale, setPdfScale] = useState(1.0);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const pdfContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!pdfContainerRef.current) return;
+    
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+
+    observer.observe(pdfContainerRef.current);
+    return () => observer.disconnect();
+  }, [activeReaderItem]);
+
+  function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
+    setNumPages(numPages);
+    setPageNumber(1);
+  }
+
+  const changePage = (offset: number) => {
+    setPageNumber((prevPageNumber) =>
+      Math.min(Math.max(1, prevPageNumber + offset), numPages || 1),
+    );
+  };
 
   // Notes Modal state
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
@@ -354,6 +395,7 @@ const FocusTimer: React.FC = () => {
     setActiveReaderItem(item);
     setReadingSeconds(0);
     setIsReading(false);
+    setPageNumber(1);
   };
 
   const closeReader = () => {
@@ -1029,8 +1071,92 @@ const FocusTimer: React.FC = () => {
               <div
                 className={`mx-auto bg-white shadow-sm rounded-2xl border border-gray-100 flex flex-col relative w-full h-full overflow-hidden ${activeReaderItem.type === "text" ? "max-w-4xl p-5 sm:p-12 overflow-y-auto" : "max-w-6xl"}`}
               >
-                {activeReaderItem.type === "link" ||
-                activeReaderItem.type === "pdf" ? (
+                {activeReaderItem.type === "pdf" ? (
+                  <div className="flex-1 flex flex-col h-full overflow-hidden bg-gray-100">
+                    <div
+                      className="flex-1 w-full relative overflow-auto p-4 flex justify-center"
+                      ref={pdfContainerRef}
+                    >
+                      <Document
+                        file={activeReaderItem.content}
+                        onLoadSuccess={onDocumentLoadSuccess}
+                        loading={
+                          <div className="flex flex-col items-center justify-center p-12">
+                            <Loader2 className="animate-spin text-brand-orange mb-2" size={32} />
+                            <p className="text-sm font-medium text-gray-500">Loading document...</p>
+                          </div>
+                        }
+                        error={
+                          <div className="p-8 text-center bg-red-50 rounded-xl border border-red-100">
+                            <p className="text-red-600 font-bold">Failed to load PDF</p>
+                            <p className="text-xs text-red-400 mt-1">Please try opening in external view.</p>
+                          </div>
+                        }
+                      >
+                        <Page 
+                          pageNumber={pageNumber} 
+                          scale={pdfScale}
+                          className="shadow-2xl mb-4"
+                          renderTextLayer={true}
+                          renderAnnotationLayer={true}
+                          loading={null}
+                          width={containerWidth ? (containerWidth - 40) : undefined}
+                        />
+                      </Document>
+                    </div>
+
+                    {/* PDF Navigation Controls */}
+                    <div className="bg-white border-t border-gray-100 px-4 py-3 flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                         <button
+                          onClick={() => changePage(-1)}
+                          disabled={pageNumber <= 1}
+                          className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <ChevronLeft size={20} className="text-gray-600" />
+                        </button>
+                        <button
+                          onClick={() => changePage(1)}
+                          disabled={numPages ? pageNumber >= numPages : true}
+                          className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <ChevronRight size={20} className="text-gray-600" />
+                        </button>
+                        <span className="text-sm font-bold text-gray-700 ml-4 font-mono">
+                          Page {pageNumber} of {numPages || "--"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center space-x-4">
+                        <div className="hidden sm:flex items-center space-x-2 mr-4">
+                          <button 
+                            onClick={() => setPdfScale(s => Math.max(0.5, s - 0.1))}
+                            className="text-xs font-black text-gray-400 hover:text-brand-orange"
+                          >
+                            A-
+                          </button>
+                          <span className="text-[10px] font-bold text-gray-400 min-w-[30px] text-center">
+                            {Math.round(pdfScale * 100)}%
+                          </span>
+                          <button 
+                            onClick={() => setPdfScale(s => Math.min(2.0, s + 0.1))}
+                            className="text-xs font-black text-gray-400 hover:text-brand-orange"
+                          >
+                            A+
+                          </button>
+                        </div>
+                        <a
+                          href={activeReaderItem.content}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-brand-orange font-black uppercase tracking-widest hover:underline flex items-center bg-brand-orange/5 px-3 py-1 rounded-lg text-[10px] sm:text-xs"
+                        >
+                          Pop Out <ExternalLink size={12} className="ml-1" />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                ) : activeReaderItem.type === "link" ? (
                   <div className="flex-1 flex flex-col h-full overflow-hidden">
                     <div
                       className="flex-1 w-full bg-gray-50 relative overflow-y-auto"
@@ -1043,8 +1169,8 @@ const FocusTimer: React.FC = () => {
                         src={
                           activeReaderItem.content.startsWith("http") ||
                           activeReaderItem.content.startsWith("blob")
-                            ? `${activeReaderItem.content}#view=FitH&toolbar=0`
-                            : `https://${activeReaderItem.content}#view=FitH&toolbar=0`
+                            ? activeReaderItem.content
+                            : `https://${activeReaderItem.content}`
                         }
                         className="w-full border-none bg-white min-h-[1000px]"
                         style={{
@@ -1059,7 +1185,7 @@ const FocusTimer: React.FC = () => {
                     <div className="bg-white p-3 border-t border-gray-100 flex items-center justify-between text-[10px] sm:text-xs text-gray-400">
                       <div className="flex items-center">
                         <Zap size={14} className="mr-2 text-brand-orange" />
-                        <span>Enhanced Viewer</span>
+                        <span>Web Frame Viewer</span>
                       </div>
                       <a
                         href={
