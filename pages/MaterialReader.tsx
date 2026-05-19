@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Document, Page } from 'react-pdf';
+import { Document, Page, pdfjs } from 'react-pdf';
 import ReactMarkdown from 'react-markdown';
-import { Bookmark, BookOpen, Plus } from 'lucide-react';
+import { Bookmark, Plus } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+
+// ✅ IMPORTANT: Configure PDF worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 type Material = {
   id: string;
@@ -18,14 +21,30 @@ interface MaterialReaderProps {
 
 const MaterialReader: React.FC<MaterialReaderProps> = ({ material }) => {
   const { addFlashCard } = useApp();
+
   const [numPages, setNumPages] = useState<number>(0);
-  const [currentPage, setCurrentPage] = useState<number>(1);
   const [notes, setNotes] = useState<string[]>([]);
   const [newNote, setNewNote] = useState('');
   const [bookmarked, setBookmarked] = useState(false);
   const [timeLeft, setTimeLeft] = useState(material.readTimeMinutes * 60);
+  const [pageWidth, setPageWidth] = useState<number>(600);
 
-  // Timer countdown
+  // ✅ Handle responsive PDF width
+  useEffect(() => {
+    const updateWidth = () => {
+      if (window.innerWidth < 768) {
+        setPageWidth(window.innerWidth - 40); // mobile padding
+      } else {
+        setPageWidth(600);
+      }
+    };
+
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
+
+  // ✅ Timer countdown
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
@@ -33,12 +52,14 @@ const MaterialReader: React.FC<MaterialReaderProps> = ({ material }) => {
     return () => clearInterval(timer);
   }, []);
 
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => setNumPages(numPages);
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+  };
 
   const handleAddNote = () => {
     if (!newNote.trim()) return;
     setNotes([...notes, newNote]);
-    addFlashCard(newNote, 'daily'); // Add note to flashcards
+    addFlashCard(newNote, 'daily');
     setNewNote('');
   };
 
@@ -47,16 +68,21 @@ const MaterialReader: React.FC<MaterialReaderProps> = ({ material }) => {
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
-    return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    return `${m.toString().padStart(2, '0')}:${s
+      .toString()
+      .padStart(2, '0')}`;
   };
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">{material.title}</h2>
         <button
           className={`flex items-center space-x-1 px-3 py-1 rounded-lg transition-colors ${
-            bookmarked ? 'bg-yellow-400 text-white' : 'bg-gray-100 text-gray-700'
+            bookmarked
+              ? 'bg-yellow-400 text-white'
+              : 'bg-gray-100 text-gray-700'
           }`}
           onClick={toggleBookmark}
         >
@@ -65,45 +91,54 @@ const MaterialReader: React.FC<MaterialReaderProps> = ({ material }) => {
         </button>
       </div>
 
-      <div className="border rounded-xl shadow p-4 max-h-[60vh] overflow-y-auto mb-4">
+      {/* Content Viewer */}
+      <div className="border rounded-xl shadow p-2 md:p-4 max-h-[75vh] overflow-y-auto mb-4">
         {material.type === 'pdf' ? (
-          <Document file={material.content} onLoadSuccess={onDocumentLoadSuccess}>
-            <Page pageNumber={currentPage} />
+          <Document
+            file={material.content}
+            onLoadSuccess={onDocumentLoadSuccess}
+            loading={
+              <p className="text-center text-gray-500">Loading PDF...</p>
+            }
+            error={
+              <p className="text-center text-red-500">
+                Failed to load PDF
+              </p>
+            }
+          >
+            {/* ✅ Render ALL pages for smooth scrolling */}
+            {Array.from(new Array(numPages), (_, index) => (
+              <Page
+                key={`page_${index + 1}`}
+                pageNumber={index + 1}
+                width={pageWidth}
+                className="mb-4"
+              />
+            ))}
           </Document>
         ) : (
-          <ReactMarkdown className="prose max-w-full">{material.content}</ReactMarkdown>
+          <ReactMarkdown className="prose max-w-full">
+            {material.content}
+          </ReactMarkdown>
         )}
       </div>
 
-      {material.type === 'pdf' && numPages > 1 && (
-        <div className="flex justify-between mb-4">
-          <button
-            disabled={currentPage <= 1}
-            className="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200"
-            onClick={() => setCurrentPage(currentPage - 1)}
-          >
-            Previous
-          </button>
-          <span>Page {currentPage} / {numPages}</span>
-          <button
-            disabled={currentPage >= numPages}
-            className="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200"
-            onClick={() => setCurrentPage(currentPage + 1)}
-          >
-            Next
-          </button>
-        </div>
-      )}
-
+      {/* Timer */}
       <div className="flex justify-between items-center mb-4">
-        <p className="text-sm text-gray-500">Time left: {formatTime(timeLeft)}</p>
+        <p className="text-sm text-gray-500">
+          Time left: {formatTime(timeLeft)}
+        </p>
       </div>
 
+      {/* Notes Section */}
       <div className="space-y-3">
         <h3 className="font-semibold text-gray-700">Notes</h3>
+
         <div className="space-y-2">
           {notes.map((note, idx) => (
-            <div key={idx} className="bg-gray-100 p-2 rounded">{note}</div>
+            <div key={idx} className="bg-gray-100 p-2 rounded">
+              {note}
+            </div>
           ))}
         </div>
 
