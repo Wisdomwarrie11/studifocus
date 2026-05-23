@@ -93,6 +93,8 @@ interface AppContextType {
   journals: JournalEntry[];
   addGoal: (text: string) => void;
   toggleGoal: (id: string) => void;
+  editGoal: (id: string, text: string) => void;
+  deleteGoal: (id: string) => void;
   addActivity: (type: Activity['type'], metadata?: any, duration?: number) => void;
   addPoints: (amount: number) => void;
   addFlashCard: (text: string, interval: 'hourly' | 'daily') => void;
@@ -254,13 +256,81 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
   }, []);
 
+  const getFriendlyAuthErrorMessage = (error: any): string => {
+    if (!error) return "An unexpected error occurred. Please try again.";
+    
+    const code = error.code || (error.message && error.message.includes('/') ? error.message : '');
+    
+    if (code) {
+      switch (code) {
+        // Login errors
+        case 'auth/user-not-found':
+          return "We couldn't find an account with this email. Please register first.";
+        case 'auth/wrong-password':
+          return "Incorrect password. Please try again or reset your password.";
+        case 'auth/invalid-credential':
+          return "Incorrect email or password. Please verify your credentials, or click 'Register Here' to sign up.";
+        case 'auth/user-disabled':
+          return "Your account has been disabled. Please contact support.";
+        
+        // Register errors
+        case 'auth/email-already-in-use':
+          return "This email address is already registered. Please log in instead or use another email.";
+        case 'auth/invalid-email':
+          return "Please enter a valid email address.";
+        case 'auth/weak-password':
+          return "Password must be at least 6 characters long.";
+        
+        // General errors
+        case 'auth/operation-not-allowed':
+          return "Email/password sign-in is not enabled. Please contact support.";
+        case 'auth/too-many-requests':
+          return "Too many failed attempts. Access to this account has been temporarily disabled. Please try again later.";
+        case 'auth/network-request-failed':
+          return "Network error. Please check your internet connection.";
+        case 'auth/popup-closed-by-user':
+          return "The login popup was closed before completing. Please try again.";
+        case 'auth/internal-error':
+          return "Internal system error. Please try again.";
+        default:
+          break;
+      }
+    }
+
+    const msg = String(error.message || error).toLowerCase();
+    if (msg.includes('user-not-found') || msg.includes('no-user')) {
+      return "We couldn't find an account with this email. Please register first.";
+    }
+    if (msg.includes('wrong-password')) {
+      return "Incorrect password. Please try again.";
+    }
+    if (msg.includes('invalid-credential') || msg.includes('invalid-email-or-password')) {
+      return "Incorrect email or password. Please verify your credentials, or click 'Register Here' to sign up.";
+    }
+    if (msg.includes('email-already-in-use') || msg.includes('email-already-exists') || msg.includes('already registered')) {
+      return "This email address is already registered. Please log in instead or use another email.";
+    }
+    if (msg.includes('weak-password') || msg.includes('password-should-be-at-least')) {
+      return "Password must be at least 6 characters long.";
+    }
+    if (msg.includes('network-request-failed') || msg.includes('network error')) {
+      return "Network error. Please verify your internet connection and try again.";
+    }
+    if (msg.includes('too-many-requests')) {
+      return "Too many attempts. Please wait a few moments and try again.";
+    }
+    
+    return error.message || "An error occurred during authentication. Please check your credentials.";
+  };
+
   const login = async (email?: string, password?: string) => {
     try {
       if (!email || !password) throw new Error("Email and password are required");
       await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login Error", error);
-      throw error;
+      const friendlyMessage = getFriendlyAuthErrorMessage(error);
+      throw new Error(friendlyMessage);
     }
   };
 
@@ -281,9 +351,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       };
       await setDoc(userDocRef, userData);
       setUser(userData);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Register Error", error);
-      throw error;
+      const friendlyMessage = getFriendlyAuthErrorMessage(error);
+      throw new Error(friendlyMessage);
     }
   };
 
@@ -322,6 +393,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `goals/${id}`);
+    }
+  };
+
+  const editGoal = async (id: string, text: string) => {
+    if (!user) return;
+    try {
+      await updateDoc(doc(db, 'goals', id), { text });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `goals/${id}`);
+    }
+  };
+
+  const deleteGoal = async (id: string) => {
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, 'goals', id));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `goals/${id}`);
     }
   };
 
@@ -544,6 +633,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       journals,
       addGoal,
       toggleGoal,
+      editGoal,
+      deleteGoal,
       addActivity,
       addPoints,
       addFlashCard,

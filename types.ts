@@ -66,6 +66,7 @@ export interface DailyGoal {
   id: string;
   text: string;
   completed: boolean;
+  createdAt?: string;
 }
 
 export interface SubGoal {
